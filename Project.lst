@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 17:47:34
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Page 1 - 1
 
 
@@ -30,30 +30,50 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 			      C .LIST
 			      C 
 
-				; MACROs should list all registers used, even if restored
-				;----------------------------------------------------------------------
+				;-----------------------------------------------------------------------------------------------------------
 				; Name: mGetString
 				;
 				; This MACRO processes strings by using Irvine's ReadString 
 				;   to get user input.
 				;
-				; Preconditions:
+				; Preconditions:    Uses and restores edx, ecx.
+				;                   Uses mDisplayString - which cannot accept argument using edx. 
 				;
-				; Postconditions:
+				; Postconditions: None
 				;
 				; Receives:
+				;           offsetPrompt                = reference input parameter, prompt string array
+				;           offsetUserInputStorage      = reference output parameter, user entered string 
+				;           maxArray                    = value input parameter, max size of array allowed for input
+				;           lengthInput                 = reference output parameter, actual size, in bytes, of input
 				;
 				; Returns:
-				;----------------------------------------------------------------------
-				mGetString MACRO
+				;            offsetUserInputStorage      = reference output parameter, user entered string
+				;            lengthInput                 = reference output parameter, actual size, in bytes, of user input
+				;-------------------------------------------------------------------------------------------------------------
+				mGetString MACRO offsetPrompt:REQ, offsetUserInputStorage:REQ, maxArray:REQ, lengthInput:REQ
+				    push    edx
+				    push    ecx
+				    push    eax
 
+				    ; display prompt
+				    mDisplayString  offsetPrompt
+
+				    ; get user input
+				    mov     edx, offsetUserInputStorage
+				    mov     ecx, maxArray
+				    call    ReadString
+				    mov     DWORD PTR [lengthInput], eax
+
+				    pop     eax
+				    pop     ecx
+				    pop     edx
 				ENDM
 
-				;----------------------------------------------------------------------
+				;---------------------------------------------------------------------------
 				; Name: mDisplayString
 				;
-				; This MACRO processes strings by using Irvine's WriteString 
-				;   to display/print a memory addressed string.
+				; This MACRO uses Irvine's WriteString to print a memory addressed string.
 				;
 				; Preconditions: Do not use EDX as an argument.
 				;
@@ -63,7 +83,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				;           offsetString = reference input parameter, string array address
 				;
 				; Returns: None
-				;----------------------------------------------------------------------
+				;--------------------------------------------------------------------------
 				mDisplayString MACRO offsetString:REQ
 				    push    edx
 				    mov     edx, offsetString
@@ -75,7 +95,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				; (insert constant definitions here)
 
  00000000			.data
-
+				    ; string array variables
  00000000 4C 6F 77 65 72	    programTitle                BYTE        "Lower-Level I/O Procedures for Numerical Strings by Ravonne Byrd",0
 	   2D 4C 65 76 65
 	   6C 20 49 2F 4F
@@ -89,13 +109,14 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 	   79 20 52 61 76
 	   6F 6E 6E 65 20
 	   42 79 72 64 00
- 00000041 49 66 20 79 6F	    programDescription          BYTE        "If you input 10 integers that can fit in a signed doubleword,",13,10,
+ 00000041 49 66 20 79 6F	    programDescription          BYTE        "If you input 10 integers that can each fit in a signed doubleword,",13,10,
 	   75 20 69 6E 70
 	   75 74 20 31 30
 	   20 69 6E 74 65
 	   67 65 72 73 20
 	   74 68 61 74 20
-	   63 61 6E 20 66
+	   63 61 6E 20 65
+	   61 63 68 20 66
 	   69 74 20 69 6E
 	   20 61 20 73 69
 	   67 6E 65 64 20
@@ -125,28 +146,28 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 	   2E 0D 0A 00
 				                                            "this program will display that list of integers, as well as",13,10,
 				                                            "report back their sum and rounded average.",13,10,0
- 000000EA 50 6C 65 61 73	    userPrompt                  BYTE        "Please enter your integer: ",0
+ 000000EF 50 6C 65 61 73	    userPrompt                  BYTE        "Please enter your integer: ",0
 	   65 20 65 6E 74
 	   65 72 20 79 6F
 	   75 72 20 69 6E
 	   74 65 67 65 72
 	   3A 20 00
- 00000106 41 72 65 20 79	    errorMessage                BYTE        "Are you sure that was and integer? Maybe it was too large for 32-bits.",13,10,0
+ 0000010B 41 72 65 20 79	    errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
 	   6F 75 20 73 75
 	   72 65 20 74 68
 	   61 74 20 77 61
-	   73 20 61 6E 64
-	   20 69 6E 74 65
-	   67 65 72 3F 20
-	   4D 61 79 62 65
-	   20 69 74 20 77
-	   61 73 20 74 6F
-	   6F 20 6C 61 72
-	   67 65 20 66 6F
-	   72 20 33 32 2D
-	   62 69 74 73 2E
-	   0D 0A 00
- 0000014F 54 68 61 6E 6B	    goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
+	   73 20 61 6E 20
+	   69 6E 74 65 67
+	   65 72 3F 20 4D
+	   61 79 62 65 20
+	   69 74 20 77 61
+	   73 20 74 6F 6F
+	   20 6C 61 72 67
+	   65 20 66 6F 72
+	   20 33 32 2D 62
+	   69 74 73 2E 0D
+	   0A 00
+ 00000153 54 68 61 6E 6B	    goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 	   20 79 6F 75 20
 	   66 6F 72 20 79
 	   6F 75 72 20 70
@@ -159,21 +180,44 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 	   20 79 6F 75 72
 	   20 64 61 79 2E
 	   0D 0A 00
+
+				    ; user inputted variables
+ 00000192  0000000F [		    userNum                     BYTE        15 DUP(?)           ; user input buffer
+	    00
+	   ]
+ 000001A1 0000000F		    maxCharUserNum              DWORD       SIZEOF usernum      ; max size of userNum
+ 000001A5 00000000		    byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
 				    
 
  00000000			.code
  00000000			main PROC
+
  00000000  68 00000000 R	    push    offset programTitle
  00000005  68 00000041 R	    push    offset programDescription
- 0000000A  E8 00000011		    call    Introduction
+ 0000000A  E8 0000002B		    call    Introduction
 
- 0000000F  68 0000014F R	    push    offset goodbyeMessage
- 00000014  E8 0000003B		    call    Goodbye
+				;    mov     ecx, 10
+ 0000000F			_inputLoop: 
+				    
+ 0000000F  68 000000EF R	    push    offset userPrompt
+ 00000014  68 00000192 R	    push    offset userNum
+ 00000019  FF 35 000001A1 R	    push    MaxCharUserNum
+ 0000001F  68 000001A5 R	    push    offset byteCount
+ 00000024  E8 00000062		    call    Practice
+
+				;    LOOP    _inputLoop
+
+ 00000029			_error:
+
+ 00000029			_continue:
+
+ 00000029  68 00000153 R	    push    offset goodbyeMessage
+ 0000002E  E8 00000042		    call    Goodbye
 
 				    Invoke ExitProcess,0	; exit to operating system
- 00000019  6A 00	   *	    push   +000000000h
- 0000001B  E8 00000000 E   *	    call   ExitProcess
- 00000020			main ENDP
+ 00000033  6A 00	   *	    push   +000000000h
+ 00000035  E8 00000000 E   *	    call   ExitProcess
+ 0000003A			main ENDP
 
 				;---------------------------------------------------------------------------------
 				; Name: Introduction
@@ -186,32 +230,35 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				; Postconditions: None
 				;
 				; Receives:
-				;           [ebp+12] = reference of string input parameter - program's title
-				;           [ebp+8] = reference of string input parameter - program's description
+				;           [ebp+16] = reference of string input parameter - program's title
+				;           [ebp+12] = reference of string input parameter - program's description
 				;
 				; Returns: None
 				;-----------------------------------------------------------------------------------
- 00000020			Introduction PROC
- 00000020  55			    push    ebp
- 00000021  8B EC		    mov     ebp, esp
+ 0000003A			Introduction PROC USES edx
+ 0000003A  52		   *	    push   edx
+ 0000003B  55			    push    ebp
+ 0000003C  8B EC		    mov     ebp, esp
 
+ 0000003E  E8 00000000 E	    call                CrLf
+				    mDisplayString      [ebp+16]
+ 00000043  52		     1	    push    edx
+ 00000044  8B 55 10	     1	    mov     edx, [ebp+16]
+ 00000047  E8 00000000 E     1	    call    WriteString
+ 0000004C  E8 00000000 E     1	    call    CrLf
+ 00000051  5A		     1	    pop     edx
+ 00000052  E8 00000000 E	    call                CrLf
 				    mDisplayString      [ebp+12]
- 00000023  52		     1	    push    edx
- 00000024  8B 55 0C	     1	    mov     edx, [ebp+12]
- 00000027  E8 00000000 E     1	    call    WriteString
- 0000002C  E8 00000000 E     1	    call    CrLf
- 00000031  5A		     1	    pop     edx
- 00000032  E8 00000000 E	    call                CrLf
-				    mDisplayString      [ebp+8]
- 00000037  52		     1	    push    edx
- 00000038  8B 55 08	     1	    mov     edx, [ebp+8]
- 0000003B  E8 00000000 E     1	    call    WriteString
- 00000040  E8 00000000 E     1	    call    CrLf
- 00000045  5A		     1	    pop     edx
+ 00000057  52		     1	    push    edx
+ 00000058  8B 55 0C	     1	    mov     edx, [ebp+12]
+ 0000005B  E8 00000000 E     1	    call    WriteString
+ 00000060  E8 00000000 E     1	    call    CrLf
+ 00000065  5A		     1	    pop     edx
 
- 00000046  5D			    pop     ebp
- 00000047  C2 0008		    RET     8
- 0000004A			Introduction EndP
+ 00000066  5D			    pop     ebp
+ 00000067  5A		   *	    pop    edx
+ 00000068  C2 0008		    RET     8
+ 0000006B			Introduction EndP
 
 				;----------------------------------------------------------------------
 				; Name: ReadVal
@@ -226,13 +273,13 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				;
 				; Returns:
 				;----------------------------------------------------------------------
- 0000004A			ReadVal PROC
- 0000004A  55			    push    ebp
- 0000004B  8B EC		    mov     ebp, esp
+ 0000006B			ReadVal PROC
+ 0000006B  55			    push    ebp
+ 0000006C  8B EC		    mov     ebp, esp
 
- 0000004D  5D			    pop     ebp
- 0000004E  C3			    RET
- 0000004F			ReadVal EndP
+ 0000006E  5D			    pop     ebp
+ 0000006F  C3			    RET
+ 00000070			ReadVal EndP
 
 				;----------------------------------------------------------------------
 				; Name: WriteVal
@@ -247,13 +294,13 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				;
 				; Returns:
 				;----------------------------------------------------------------------
- 0000004F			WriteVal PROC
- 0000004F  55			    push    ebp
- 00000050  8B EC		    mov     ebp, esp
+ 00000070			WriteVal PROC
+ 00000070  55			    push    ebp
+ 00000071  8B EC		    mov     ebp, esp
 
- 00000052  5D			    pop     ebp
- 00000053  C3			    RET
- 00000054			WriteVal EndP
+ 00000073  5D			    pop     ebp
+ 00000074  C3			    RET
+ 00000075			WriteVal EndP
 
 				;-----------------------------------------------------------------------------
 				; Name: Goodbye
@@ -265,27 +312,88 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
 				; Postconditions: None
 				;
 				; Receives:
-				;           [ebp+8] = reference of string input parameter - program's goodbye
+				;           [ebp+12] = reference of string input parameter - program's goodbye
 				;
 				; Returns: None
 				;------------------------------------------------------------------------------
- 00000054			Goodbye PROC
- 00000054  55			    push    ebp
- 00000055  8B EC		    mov     ebp, esp
+ 00000075			Goodbye PROC USES edx
+ 00000075  52		   *	    push   edx
+ 00000076  55			    push    ebp
+ 00000077  8B EC		    mov     ebp, esp
 
-				    mDisplayString      [ebp+8]
- 00000057  52		     1	    push    edx
- 00000058  8B 55 08	     1	    mov     edx, [ebp+8]
- 0000005B  E8 00000000 E     1	    call    WriteString
- 00000060  E8 00000000 E     1	    call    CrLf
- 00000065  5A		     1	    pop     edx
+				    mDisplayString      [ebp+12]
+ 00000079  52		     1	    push    edx
+ 0000007A  8B 55 0C	     1	    mov     edx, [ebp+12]
+ 0000007D  E8 00000000 E     1	    call    WriteString
+ 00000082  E8 00000000 E     1	    call    CrLf
+ 00000087  5A		     1	    pop     edx
 
- 00000066  5D			    pop     ebp
- 00000067  C3			    RET
- 00000068			Goodbye EndP
+ 00000088  5D			    pop     ebp
+				    RET
+ 00000089  5A		   *	    pop    edx
+ 0000008A  C3		   *	    ret    00000h
+ 0000008B			Goodbye EndP
+
+				;----------------------------------------------------------------------
+				; Name: Practice
+				;
+				; Description:
+				;
+				; Preconditions: 
+				;
+				; Postconditions:
+				;
+				; Receives:
+				;           [ebp+32]      = reference input parameter, prompt string array
+				;           [ebp+28]      = reference output parameter, user entered string 
+				;           [ebp+24]      = value input parameter, max size of array allowed for input
+				;           [ebp+20]      = reference output parameter, actual size, in bytes, of input
+				;
+				; Returns:
+				;----------------------------------------------------------------------
+ 0000008B			Practice PROC USES eax ecx edx
+ 0000008B  50		   *	    push   eax
+ 0000008C  51		   *	    push   ecx
+ 0000008D  52		   *	    push   edx
+ 0000008E  55			    push    ebp
+ 0000008F  8B EC		    mov     ebp, esp
+
+				    
+				    mGetString      [ebp+32], [ebp+28], [ebp+24], [ebp+20]
+ 00000091  52		     1	    push    edx
+ 00000092  51		     1	    push    ecx
+ 00000093  50		     1	    push    eax
+ 00000094  52		     2	    push    edx
+ 00000095  8B 55 20	     2	    mov     edx, [ebp+32]
+ 00000098  E8 00000000 E     2	    call    WriteString
+ 0000009D  E8 00000000 E     2	    call    CrLf
+ 000000A2  5A		     2	    pop     edx
+
+ 000000A3  8B 55 1C	     1	    mov     edx, [ebp+28]
+ 000000A6  8B 4D 18	     1	    mov     ecx, [ebp+24]
+ 000000A9  E8 00000000 E     1	    call    ReadString
+ 000000AE  89 45 14	     1	    mov     DWORD PTR [[ebp+20]], eax
+ 000000B1  58		     1	    pop     eax
+ 000000B2  59		     1	    pop     ecx
+ 000000B3  5A		     1	    pop     edx
+				    mDisplayString  [ebp+28]
+ 000000B4  52		     1	    push    edx
+ 000000B5  8B 55 1C	     1	    mov     edx, [ebp+28]
+ 000000B8  E8 00000000 E     1	    call    WriteString
+ 000000BD  E8 00000000 E     1	    call    CrLf
+ 000000C2  5A		     1	    pop     edx
+ 000000C3  8B 45 14		    mov     eax, [ebp+20]
+ 000000C6  E8 00000000 E	    call    WriteInt
+
+ 000000CB  5D			    pop     ebp
+ 000000CC  5A		   *	    pop    edx
+ 000000CD  59		   *	    pop    ecx
+ 000000CE  58		   *	    pop    eax
+ 000000CF  C2 0010		    RET     16
+ 000000D2			Practice EndP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 14:36:53
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/29/21 17:47:34
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Symbols 2 - 1
 
 
@@ -387,8 +495,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 0000018E Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000068 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001A9 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000000D2 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -428,14 +536,14 @@ GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTextColor . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTickCount . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Goodbye  . . . . . . . . . . . .	P Near	 00000054 _TEXT	Length= 00000014 Public STDCALL
+Goodbye  . . . . . . . . . . . .	P Near	 00000075 _TEXT	Length= 00000016 Public STDCALL
 Gotoxy . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapAlloc  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Introduction . . . . . . . . . .	P Near	 00000020 _TEXT	Length= 0000002A Public STDCALL
+Introduction . . . . . . . . . .	P Near	 0000003A _TEXT	Length= 00000031 Public STDCALL
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -445,6 +553,7 @@ OpenInputFile  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ParseDecimal32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 PeekConsoleInputA  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+Practice . . . . . . . . . . . .	P Near	 0000008B _TEXT	Length= 00000047 Public STDCALL
 Random32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 RandomRange  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Randomize  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -460,7 +569,7 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-ReadVal  . . . . . . . . . . . .	P Near	 0000004A _TEXT	Length= 00000005 Public STDCALL
+ReadVal  . . . . . . . . . . . .	P Near	 0000006B _TEXT	Length= 00000005 Public STDCALL
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -497,9 +606,12 @@ WriteStackFrameName  . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-WriteVal . . . . . . . . . . . .	P Near	 0000004F _TEXT	Length= 00000005 Public STDCALL
+WriteVal . . . . . . . . . . . .	P Near	 00000070 _TEXT	Length= 00000005 Public STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000020 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000003A Public STDCALL
+  _inputLoop . . . . . . . . . .	L Near	 0000000F _TEXT	
+  _error . . . . . . . . . . . .	L Near	 00000029 _TEXT	
+  _continue  . . . . . . . . . .	L Near	 00000029 _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -721,10 +833,11 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
+byteCount  . . . . . . . . . . .	DWord	 000001A5 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
-errorMessage . . . . . . . . . .	Byte	 00000106 _DATA	
+errorMessage . . . . . . . . . .	Byte	 0000010B _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
-goodbyeMessage . . . . . . . . .	Byte	 0000014F _DATA	
+goodbyeMessage . . . . . . . . .	Byte	 00000153 _DATA	
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
@@ -734,10 +847,12 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
+maxCharUserNum . . . . . . . . .	DWord	 000001A1 _DATA	
 programDescription . . . . . . .	Byte	 00000041 _DATA	
 programTitle . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
-userPrompt . . . . . . . . . . .	Byte	 000000EA _DATA	
+userNum  . . . . . . . . . . . .	Byte	 00000192 _DATA	
+userPrompt . . . . . . . . . . .	Byte	 000000EF _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
