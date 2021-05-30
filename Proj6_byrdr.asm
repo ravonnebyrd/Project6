@@ -15,7 +15,7 @@ INCLUDE Irvine32.inc
 ; This MACRO processes strings by using Irvine's ReadString 
 ;   to get user input.
 ;
-; Preconditions:    Uses and restores edx, ecx.
+; Preconditions:    Uses and restores edx, ecx, eax
 ;                   Uses mDisplayString - which cannot accept argument using edx. 
 ;
 ; Postconditions: None
@@ -54,9 +54,9 @@ ENDM
 ;
 ; This MACRO uses Irvine's WriteString to print a memory addressed string.
 ;
-; Preconditions: Do not use EDX as an argument.
+; Preconditions: Do not use edx as an argument.
 ;
-; Postconditions: EDX (used and restored)
+; Postconditions: edx (used and restored)
 ;
 ; Receives:
 ;           offsetString = reference input parameter, string array address
@@ -71,7 +71,19 @@ mDisplayString MACRO offsetString:REQ
     pop     edx
 ENDM
 
-; (insert constant definitions here)
+
+; constant definitions
+LO_INT_SDWORD       =   -2147483648
+HI_INT_SDWORD       =   2147483647
+
+LO_ASCII_DEC_NUM    =   48
+HI_ASCII_DEC_NUM    =   57
+
+NEG_SIGN            =   45
+ZERO                =   0
+ONE                 =   1
+TEN                 =   10
+FORTY_EIGHT         =   48
 
 .data
     ; string array variables
@@ -80,13 +92,18 @@ ENDM
                                             "this program will display that list of integers, as well as",13,10,
                                             "report back their sum and rounded average.",13,10,0
     userPrompt                  BYTE        "Please enter your integer: ",0
+    secondUserPrompt            BYTE        "Try again: ",0
     errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
-    ; user inputted variables
+    ; variables for user input
     userNum                     BYTE        15 DUP(?)           ; user input buffer
     maxCharUserNum              DWORD       SIZEOF usernum      ; max size of userNum
     byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
+
+    ; ReadVal procedure variables
+    numInt                      SDWORD      0 
+    negate                      DWORD       0
     
 
 .code
@@ -99,11 +116,15 @@ main PROC
 ;    mov     ecx, 10
 _inputLoop: 
     
+    push    offset errorMessage
+    push    offset negate
+    push    offset secondUserPrompt
+    push    offset numInt
     push    offset userPrompt
     push    offset userNum
     push    MaxCharUserNum
     push    offset byteCount
-    call    Practice
+    call    ReadVal
 
 ;    LOOP    _inputLoop
 
@@ -123,7 +144,7 @@ main ENDP
 ; This procedure displays the program's title, author, and description
 ;   to the user.
 ;
-; Preconditions: Uses  mDisplayString - which cannot accept argument using edx. 
+; Preconditions: Uses mDisplayString - which cannot accept argument using edx. 
 ;
 ; Postconditions: None
 ;
@@ -146,25 +167,87 @@ Introduction PROC USES edx
     RET     8
 Introduction EndP
 
-;----------------------------------------------------------------------
+;----------------------------------------------------------------------------------------------------
 ; Name: ReadVal
 ;
 ; Description:
 ;
-; Preconditions:
+; Preconditions: Uses and restores esi, eax, ecx, edx
+;               Uses mGetString, which uses and restores edx, ecx.
+;               Uses mDisplayString - which cannot accept argument using edx. 
 ;
 ; Postconditions:
 ;
 ; Receives:
+;           [ebp+56]    =   reference input parameter, error message
+;           [ebp+52]    =   reference output parameter, negate
+;           [ebp+48]    =   reference input parameter, try again prompt
+;           [ebp+44]    =   reference output parameter, int to add to array of user inputted values
+;       Primarily for mGetString:
+;           [ebp+40]    =   reference input parameter, prompt string array
+;           [ebp+36]    =   reference output parameter, user entered string 
+;           [ebp+32]    =   value input parameter, max size of array allowed for input
+;           [ebp+28]    =   reference output parameter, actual size, in bytes, of input
 ;
 ; Returns:
-;----------------------------------------------------------------------
-ReadVal PROC
+;           [ebp+40]    =   reference output parameter, int to add to array of user inputted values
+;-----------------------------------------------------------------------------------------------------
+ReadVal PROC USES eax ecx edx esi ebx
     push    ebp
     mov     ebp, esp
 
+_firstTry:
+    mGetString      [ebp+40], [ebp+36], [ebp+32], [ebp+28]
+    jmp     _validationLoop
+
+_tryAgain:
+    mGetString      [ebp+48], [ebp+36], [ebp+32], [ebp+28]
+
+    ; set up for _validationLoop
+    mov     esi, [ebp+36]
+    mov     ecx, [ebp+28]       ; setting up counter for loop
+    
+_validationLoop:
+    LODSB
+    cmp     AL, NEG_SIGN
+    je      _negateY
+_continueValidation:
+    cmp     AL, LO_ASCII_DEC_NUM
+    jb      _error
+    cmp     AL, HI_ASCII_DEC_NUM
+    ja      _error
+    sub     AL, FORTY_EIGHT          ; (numChar - 48)
+    mov     ebx, ZERO
+    add     ebx, AL                  ; store current value of AL in ebx, since need AL to multiply
+    mov     edx, [ebp+44]            ; store offset of numInt in edx
+    mov     eax, [edx]               ; move value of numInt to eax
+    mov     edx, 10
+    mul     edx
+    add     eax, ebx
+    mov     DWORD PTR [ebp+44], eax  ; store new numInt value
+    LOOP    _validationLOOP
+    
+    ; check if value needs to be negated
+    mov     ebx, [ebp+52]
+    cmp     DWORD PTR [ebx], ONE
+    je      _performNegate
+    jmp     _finish
+
+_error:
+    mdisplayString      [ebp+56]
+    jmp     _tryAgain
+
+_negateY:
+    mov     ebx, [ebp+52]
+    mov     DWORD PTR [ebx], ONE
+    jmp     _continueValidation
+
+_performNegate:
+    neg     numInt
+
+_finish:
     pop     ebp
-    RET
+    RET     32
 ReadVal EndP
 
 ;----------------------------------------------------------------------
@@ -211,36 +294,5 @@ Goodbye PROC USES edx
     pop     ebp
     RET
 Goodbye EndP
-
-;----------------------------------------------------------------------
-; Name: Practice
-;
-; Description:
-;
-; Preconditions: 
-;
-; Postconditions:
-;
-; Receives:
-;           [ebp+32]      = reference input parameter, prompt string array
-;           [ebp+28]      = reference output parameter, user entered string 
-;           [ebp+24]      = value input parameter, max size of array allowed for input
-;           [ebp+20]      = reference output parameter, actual size, in bytes, of input
-;
-; Returns:
-;----------------------------------------------------------------------
-Practice PROC USES eax ecx edx
-    push    ebp
-    mov     ebp, esp
-
-    
-    mGetString      [ebp+32], [ebp+28], [ebp+24], [ebp+20]
-    mDisplayString  [ebp+28]
-    mov     eax, [ebp+20]
-    call    WriteInt
-
-    pop     ebp
-    RET     16
-Practice EndP
 
 END main
