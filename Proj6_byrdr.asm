@@ -67,7 +67,6 @@ mDisplayString MACRO offsetString:REQ
     push    edx
     mov     edx, offsetString
     call    WriteString
-    call    CrLf
     pop     edx
 ENDM
 
@@ -98,12 +97,13 @@ FORTY_EIGHT         =   48
 
     ; variables for user input
     userNum                     BYTE        15 DUP(?)           ; user input buffer
-    maxCharUserNum              DWORD       SIZEOF usernum      ; max size of userNum
+    maxCharUserNum              DWORD       SIZEOF userNum      ; max size of userNum
     byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
 
     ; ReadVal procedure variables
     numInt                      SDWORD      0 
-    negate                      DWORD       0
+    negate                      DWORD       0                   ; boolean
+    tempHoldAL                  DWORD       0 
     
 
 .code
@@ -116,13 +116,14 @@ main PROC
 ;    mov     ecx, 10
 _inputLoop: 
     
+    push    offset tempHoldAL
     push    offset errorMessage
     push    offset negate
     push    offset secondUserPrompt
     push    offset numInt
     push    offset userPrompt
     push    offset userNum
-    push    MaxCharUserNum
+    push    maxCharUserNum
     push    offset byteCount
     call    ReadVal
 
@@ -161,7 +162,9 @@ Introduction PROC USES edx
     call                CrLf
     mDisplayString      [ebp+16]
     call                CrLf
+    call                CrLf
     mDisplayString      [ebp+12]
+    call                CrLf
 
     pop     ebp
     RET     8
@@ -179,6 +182,7 @@ Introduction EndP
 ; Postconditions:
 ;
 ; Receives:
+;           [ebp+60]    =   reference output parameter, tempHoldAL
 ;           [ebp+56]    =   reference input parameter, error message
 ;           [ebp+52]    =   reference output parameter, negate
 ;           [ebp+48]    =   reference input parameter, try again prompt
@@ -198,56 +202,106 @@ ReadVal PROC USES eax ecx edx esi ebx
 
 _firstTry:
     mGetString      [ebp+40], [ebp+36], [ebp+32], [ebp+28]
-    jmp     _validationLoop
+    jmp     _setUp
 
+    ; Jump to _tryAgain after _error because _tryAgain displays special error prompt
 _tryAgain:
     mGetString      [ebp+48], [ebp+36], [ebp+32], [ebp+28]
 
-    ; set up for _validationLoop
+_setUp:
     mov     esi, [ebp+36]
-    mov     ecx, [ebp+28]       ; setting up counter for loop
-    
+    mov     ecx, [ebp+28]               ; setting up counter for loop
+
+;----------------------------------------------------------------------
+;
+;----------------------------------------------------------------------
 _validationLoop:
     LODSB
     cmp     AL, NEG_SIGN
     je      _negateY
-_continueValidation:
     cmp     AL, LO_ASCII_DEC_NUM
     jb      _error
     cmp     AL, HI_ASCII_DEC_NUM
     ja      _error
-    sub     AL, FORTY_EIGHT          ; (numChar - 48)
-    mov     ebx, ZERO
-    add     ebx, AL                  ; store current value of AL in ebx, since need AL to multiply
-    mov     edx, [ebp+44]            ; store offset of numInt in edx
-    mov     eax, [edx]               ; move value of numInt to eax
-    mov     edx, 10
+    sub     AL, FORTY_EIGHT             ; (numChar - 48)
+
+    ;----------------------------------------------------------------------
+    ;
+    ;----------------------------------------------------------------------
+    mov     ebx, [ebp+60]               ; store offset of tempHoldAl in ebx
+    mov     BYTE PTR [ebx], AL          ; store current value of AL in tempHoldAL, since we need eax for multiplication
+    mov     edx, [ebp+44]               ; store offset of numInt in edx
+    mov     eax, [edx]                  ; move value of numInt to eax
+    mov     edx, TEN
     mul     edx
-    add     eax, ebx
-    mov     DWORD PTR [ebp+44], eax  ; store new numInt value
-    LOOP    _validationLOOP
+    add     eax, [ebx]
+    mov     edx, [ebp+44]               ; put offset of numInt back into edx
+
+    mov     SDWORD PTR [edx], eax       ; store new numInt value in numInt
+_continueValidationFromNegate:
+    dec     ecx
+    cmp     ecx, ZERO
+    ja      _validationLOOP
     
     ; check if value needs to be negated
     mov     ebx, [ebp+52]
     cmp     DWORD PTR [ebx], ONE
     je      _performNegate
-    jmp     _finish
+    jmp     _checkRangePositive
 
+;----------------------------------------------------------------------
+;
+;----------------------------------------------------------------------
 _error:
     mdisplayString      [ebp+56]
     jmp     _tryAgain
 
-_negateY:
+;----------------------------------------------------------------------
+; If the value held in AL equals a dash (45d or 2dh), then must update
+;   the negation variable boolean. 
+;----------------------------------------------------------------------
+_negate:
     mov     ebx, [ebp+52]
     mov     DWORD PTR [ebx], ONE
-    jmp     _continueValidation
+    jmp     _continueValidationFromNegate
 
+;----------------------------------------------------------------------
+; 
+;----------------------------------------------------------------------
 _performNegate:
-    neg     numInt
+    mov     ebx, [ebp+44]
+    mov     edx, [ebx]
+    jmp     _checkRangeNegative
+_continuePerformNegate:
+    neg     edx
+    mov     SDWORD PTR [ebx], edx
+    jmp     _finish
+
+;------------------------------------------------------------------------
+; Checking that numInt generated from algorithm is within SDWORD range.
+;   If so, continue program.
+;   If not, jump to error.
+;------------------------------------------------------------------------
+_checkRangeNegative:
+    cmp     edx, LO_INT_SDWORD
+    ja      _error
+    jmp     _continuePerformNegate
+
+_checkRangePositive:
+    mov     ebx, [ebp+44]
+    mov     edx, [ebx]
+    cmp     edx, HI_INT_SDWORD
+    ja      _error
 
 _finish:
+
+    mov     ebx, [ebp+44]
+    mov     edx, [ebx] 
+    mov     eax, edx
+    call    WriteInt
+
     pop     ebp
-    RET     32
+    RET     36
 ReadVal EndP
 
 ;----------------------------------------------------------------------
