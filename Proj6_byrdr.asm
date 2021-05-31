@@ -84,6 +84,7 @@ POS_SIGN            =   43
 ZERO                =   0
 ONE                 =   1
 TEN                 =   10
+ELEVEN              =   11
 FORTY_EIGHT         =   48
 FIFTY               =   50
 
@@ -96,6 +97,9 @@ FIFTY               =   50
     userPrompt                  BYTE        "Please enter your integer: ",0
     secondUserPrompt            BYTE        "Try again: ",0
     errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
+    userEntered                 BYTE        "You entered: ",0
+    userSum                     BYTE        "Their sum: ",0
+    userAverage                 BYTE        "Their average: ",0
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
@@ -106,8 +110,14 @@ FIFTY               =   50
     ; ReadVal procedure variables
     numInt                      SDWORD      ZERO 
     negate                      DWORD       ZERO                   ; boolean
-    tempHoldAL                  SDWORD      ZERO 
+    tempHoldAL                  SDWORD      ZERO
     
+    ; main procedure loop variables
+    intArray                    SDWORD      TEN DUP(?)
+    sum                         SDWORD      ?
+    average                     SDWORD      ?
+    comma                       BYTE        ", ",0
+    newString                   BYTE        ELEVEN DUP(?)
 
 .code
 main PROC
@@ -116,8 +126,15 @@ main PROC
     push    offset programDescription
     call    Introduction
 
-;    mov     ecx, 10
-_inputLoop: 
+;--------------------------------------------------------------
+; This loop gets ten valid signed integers from the user.
+;   It will store these integers in the array, intArray.
+;--------------------------------------------------------------
+    ; set up for _getInputLoop
+    mov     ecx, LENGTHOF intArray
+    mov     esi, offset intArray
+
+_getInputLoop: 
     
     push    offset tempHoldAL
     push    offset errorMessage
@@ -129,12 +146,46 @@ _inputLoop:
     push    maxCharUserNum
     push    offset byteCount
     call    ReadVal
+    
+    mov     ebx, numInt                 ; add current numInt into intArray, via ebx
+    mov     SDWORD PTR [esi], ebx
 
-;    LOOP    _inputLoop
+    mov     numInt, ZERO                ; clear numInt for next iteration
+    add     esi, TYPE intArray          
 
-_error:
+    LOOP    _getInputLoop
 
-_continue:
+;--------------------------------------------------------------
+; Display back to the user their list of integers.
+;--------------------------------------------------------------
+    mov     eax, offset userEntered
+    mDisplayString  eax
+
+;--------------------------------------------------------------
+; This loop displays the integers in intArray, using the
+;   WriteVal procedure.
+;--------------------------------------------------------------
+
+    ; set up for _getInputLoop
+    mov     ecx, LENGTHOF intArray
+    mov     esi, offset intArray
+
+_displayIntArrayASCII:
+    mov     eax, [esi]
+
+    push    offset newString
+    push    eax
+    call    WriteVal
+    mov     eax, offset comma
+    mDisplayString  eax
+
+    add     esi, TYPE intArray
+    LOOP    _displayIntArrayASCII
+
+
+; display the sum of the integers in intArray
+
+; display the rounded average of the integers in intArray
 
     push    offset goodbyeMessage
     call    Goodbye
@@ -240,7 +291,7 @@ _validationLoop:
     cmp     AL, NEG_SIGN
     je      _negate
     cmp     AL, POS_SIGN
-    je      _continueValidationFromNegate
+    je      _continueValidationFromNegPosSign
     jmp     _firstValidationContinue
 
 _noSymbolsValidationLoop:
@@ -284,7 +335,7 @@ _firstValidationContinue:
 _continueValidationFromRangeCheck:
     mov     ebx, [ebp+44]               
     mov     DWORD PTR [ebx], eax        ; 5
-_continueValidationFromNegate:
+_continueValidationFromNegPosSign:
     dec     ecx
     cmp     ecx, ZERO
     ja      _noSymbolsValidationLoop
@@ -325,7 +376,7 @@ _error:
 _negate:
     mov     ebx, [ebp+52]
     mov     DWORD PTR [ebx], ONE
-    jmp     _continueValidationFromNegate
+    jmp     _continueValidationFromNegPosSign
 
 ;----------------------------------------------------------------------
 ; Actually performs the negation required for a negative SDWORD.
@@ -364,29 +415,40 @@ _checkRangePositive:
     jmp     _continueValidationFromRangeCheck
 
 _finish:
+    ; clear negate
+    mov     edx, [ebp+52]                       
+    mov     ebx, ZERO
+    mov     DWORD PTR [edx], ebx
+
     pop     ebp
     RET     36
 ReadVal EndP
 
-;----------------------------------------------------------------------
+;--------------------------------------------------------------------------------
 ; Name: WriteVal
 ;
-; Description:
+; This procedure converts an SDWORD integer to its string ASCII representation.
+;   It will then print the numeric ASCII string
 ;
 ; Preconditions: 
+;               Uses mDisplayString to print the ASCII string.
 ;
-; Postconditions:
+; Postconditions: None
 ;
 ; Receives:
+;           [ebp+]    =   reference output parameter, ASCII string
+;           [ebp+]    =   value input parameter, the SDWORD value to be converted
 ;
-; Returns:
-;----------------------------------------------------------------------
+; Returns: None
+;---------------------------------------------------------------------------------
 WriteVal PROC
     push    ebp
     mov     ebp, esp
 
+
+
     pop     ebp
-    RET
+    RET     8
 WriteVal EndP
 
 ;-----------------------------------------------------------------------------
