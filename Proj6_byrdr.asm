@@ -72,7 +72,7 @@ ENDM
 
 
 ; constant definitions
-LO_INT_SDWORD       =   -2147483648
+LO_INT_SDWORD       =   2147483648
 HI_INT_SDWORD       =   2147483647
 
 LO_ASCII_DEC_NUM    =   48
@@ -96,14 +96,14 @@ FORTY_EIGHT         =   48
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
-    userNum                     BYTE        15 DUP(?)           ; user input buffer
+    userNum                     BYTE        50 DUP(?)           ; user input buffer
     maxCharUserNum              DWORD       SIZEOF userNum      ; max size of userNum
     byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
 
     ; ReadVal procedure variables
     numInt                      SDWORD      0 
     negate                      DWORD       0                   ; boolean
-    tempHoldAL                  DWORD       0 
+    tempHoldAL                  SDWORD      0 
     
 
 .code
@@ -173,13 +173,14 @@ Introduction EndP
 ;----------------------------------------------------------------------------------------------------
 ; Name: ReadVal
 ;
-; Description:
+; This procedure uses mGetString to prompt the user for a number, which is stored in memory as
+;   a string. It then uses an algorithm to check that the number th user has inputted is indeed a
+;   number, and validates that it is within range. The procedure returns the string as a signed integer.
 ;
-; Preconditions: Uses and restores esi, eax, ecx, edx
+; Preconditions: Uses and restores eax ecx edx esi ebx
 ;               Uses mGetString, which uses and restores edx, ecx.
-;               Uses mDisplayString - which cannot accept argument using edx. 
 ;
-; Postconditions:
+; Postconditions: None
 ;
 ; Receives:
 ;           [ebp+60]    =   reference output parameter, tempHoldAL
@@ -194,7 +195,7 @@ Introduction EndP
 ;           [ebp+28]    =   reference output parameter, actual size, in bytes, of input
 ;
 ; Returns:
-;           [ebp+40]    =   reference output parameter, int to add to array of user inputted values
+;           [ebp+44]    =   reference output parameter, int to add to array of user inputted values
 ;-----------------------------------------------------------------------------------------------------
 ReadVal PROC USES eax ecx edx esi ebx
     push    ebp
@@ -204,56 +205,110 @@ _firstTry:
     mGetString      [ebp+40], [ebp+36], [ebp+32], [ebp+28]
     jmp     _setUp
 
-    ; Jump to _tryAgain after _error because _tryAgain displays special error prompt
+;----------------------------------------------------------------------
+; Jump to _tryAgain instead of _firstTry after an error because _tryAgain 
+;   will display the special error prompt for the user.
+;----------------------------------------------------------------------
 _tryAgain:
     mGetString      [ebp+48], [ebp+36], [ebp+32], [ebp+28]
 
+;----------------------------------------------------------------------
+; Setting Up the Validation Loop
+;   Moving esi to point to the user entered string [ebp+36]
+;   Moving ecx to equal the actual amount bytes in the user string. 
+;----------------------------------------------------------------------
 _setUp:
     mov     esi, [ebp+36]
-    mov     ecx, [ebp+28]               ; setting up counter for loop
+    mov     ecx, [ebp+28]               
 
 ;----------------------------------------------------------------------
-;
+; Validation Loop
+;   The first time the loop iterates, it first checks if there is a neg
+;       sign. If there is, the loop will deal with negating the final
+;       output. After this first iteration, only numbers are allowed 
+;       (i.e. _noSymbolsValidationLoop).
+;   This loop includes validation - that the user inputted string is
+;       indeed a number, and that it's within the correct SDWORD range.
 ;----------------------------------------------------------------------
 _validationLoop:
     LODSB
     cmp     AL, NEG_SIGN
-    je      _negateY
+    je      _negate
+    jmp     _firstValidationContinue
+
+_noSymbolsValidationLoop:
+    LODSB
+_firstValidationContinue:
     cmp     AL, LO_ASCII_DEC_NUM
     jb      _error
     cmp     AL, HI_ASCII_DEC_NUM
     ja      _error
-    sub     AL, FORTY_EIGHT             ; (numChar - 48)
 
     ;----------------------------------------------------------------------
-    ;
-    ;----------------------------------------------------------------------
-    mov     ebx, [ebp+60]               ; store offset of tempHoldAl in ebx
-    mov     BYTE PTR [ebx], AL          ; store current value of AL in tempHoldAL, since we need eax for multiplication
-    mov     edx, [ebp+44]               ; store offset of numInt in edx
-    mov     eax, [edx]                  ; move value of numInt to eax
+    ; Main aritmethic of alogrithm 
+    ;   Converts a string into it's SDWORD integer representation.
+    ;   1. First, store offset of tempHoldAl in ebx, then store current
+    ;       value of AL in tempHoldAL, since we need eax for multiplication.
+    ;   2. Next, store offset of numInt in edx, and move current value 
+    ;       of numInt into eax. 
+    ;   3. Multiply eax by 10.
+    ;       Check for any overflow, which is an instant jump to error.
+    ;   4. Add value of tempHoldAl to eax
+    ;   5. store new numInt value in numInt (not finalized, and is crucial 
+    ;       to aritmethic as long as loop is in effect).
+    ;-----------------------------------------------------------------------
+    sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value of the string num inputted
+    mov     ebx, [ebp+60]               ; 1
+    mov     BYTE PTR [ebx], AL            
+    mov     edx, [ebp+44]               ; 2
+    mov     eax, [edx]                   
     mov     edx, TEN
-    mul     edx
-    add     eax, [ebx]
-    mov     edx, [ebp+44]               ; put offset of numInt back into edx
+    imul    edx                         ; 3
+    jo      _error
+    add     eax, [ebx]                  ; 4
 
-    mov     SDWORD PTR [edx], eax       ; store new numInt value in numInt
+    ;-----------------------------------------------------------------------
+    ; Before pushing final, result integer to numInt and exiting the loop 
+    ;   (when ecx = 0), it is important to check if the number is actually
+    ;   in SDWORD range. 
+    ;-----------------------------------------------------------------------
+    cmp     ecx, ONE
+    je      _rangeCheck
+_continueValidationFromRangeCheck:
+    mov     ebx, [ebp+44]               
+    mov     DWORD PTR [ebx], eax        ; 5
 _continueValidationFromNegate:
     dec     ecx
     cmp     ecx, ZERO
-    ja      _validationLOOP
+    ja      _noSymbolsValidationLoop
     
-    ; check if value needs to be negated
+    ;-----------------------------------------------------------------------
+    ; Circles back to negate boolean set inside _negate label.
+    ;   If set (negate = 1), then must perform negation.
+    ;-----------------------------------------------------------------------
     mov     ebx, [ebp+52]
     cmp     DWORD PTR [ebx], ONE
     je      _performNegate
-    jmp     _checkRangePositive
+    jmp     _finish
 
 ;----------------------------------------------------------------------
-;
+; Error message
+;   Displays error message, clears slate of numInt and negate, in order
+;       to try a new loop for fetching valid user input.
 ;----------------------------------------------------------------------
 _error:
     mdisplayString      [ebp+56]
+
+    ; clear numInt
+    mov     edx, [ebp+44]                       
+    mov     ebx, ZERO
+    mov     DWORD PTR [edx], ebx
+    
+    ; clear negate
+    mov     edx, [ebp+52]                       
+    mov     ebx, ZERO
+    mov     DWORD PTR [edx], ebx
+
     jmp     _tryAgain
 
 ;----------------------------------------------------------------------
@@ -266,40 +321,42 @@ _negate:
     jmp     _continueValidationFromNegate
 
 ;----------------------------------------------------------------------
-; 
+; Actually performs the negation required for a negative SDWORD.
 ;----------------------------------------------------------------------
 _performNegate:
     mov     ebx, [ebp+44]
     mov     edx, [ebx]
-    jmp     _checkRangeNegative
-_continuePerformNegate:
     neg     edx
     mov     SDWORD PTR [ebx], edx
     jmp     _finish
 
 ;------------------------------------------------------------------------
-; Checking that numInt generated from algorithm is within SDWORD range.
-;   If so, continue program.
-;   If not, jump to error.
+; Checking that final eax value generated from algorithm is within SDWORD 
+;   range. Perform this check while still in algorithm loop (ecx = 1), but
+;   at end of computation algorithm, before storing in numInt. 
+;   Before checking range, must first check negate variable boolean 
+;   to see which check to perform (either for a positive or negative number)
+;       If true, jump to _checkRangeNegative.
+;       If false, jump to _checkRangePositive.
 ;------------------------------------------------------------------------
+_RangeCheck:
+    mov     ebx, [ebp+52]                   
+    mov     ebx, [ebx]
+    cmp     ebx, ONE
+    je      _checkRangeNegative
+    jmp     _checkRangePositive
+
 _checkRangeNegative:
-    cmp     edx, LO_INT_SDWORD
+    cmp     eax, LO_INT_SDWORD
     ja      _error
-    jmp     _continuePerformNegate
+    jmp     _continueValidationFromRangeCheck
 
 _checkRangePositive:
-    mov     ebx, [ebp+44]
-    mov     edx, [ebx]
-    cmp     edx, HI_INT_SDWORD
+    cmp     eax, HI_INT_SDWORD
     ja      _error
+    jmp     _continueValidationFromRangeCheck
 
 _finish:
-
-    mov     ebx, [ebp+44]
-    mov     edx, [ebx] 
-    mov     eax, edx
-    call    WriteInt
-
     pop     ebp
     RET     36
 ReadVal EndP
