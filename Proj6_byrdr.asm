@@ -121,15 +121,21 @@ FIFTY               =   50
 
 .code
 main PROC
-
+;--------------------------------------------------------------
+; A. Introduction
+;--------------------------------------------------------------
     push    offset programTitle
     push    offset programDescription
     call    Introduction
 
 ;--------------------------------------------------------------
-; This loop gets ten valid signed integers from the user.
-;   It will store these integers in the array, intArray.
+; B. Retrieving user input
 ;--------------------------------------------------------------
+    ;--------------------------------------------------------------
+    ; This loop gets ten valid signed integers from the user.
+    ;   It will store these integers in the array, intArray.
+    ;--------------------------------------------------------------
+
     ; set up for _getInputLoop
     mov     ecx, LENGTHOF intArray
     mov     esi, offset intArray
@@ -147,24 +153,27 @@ _getInputLoop:
     push    offset byteCount
     call    ReadVal
     
-    mov     ebx, numInt                 ; add current numInt into intArray, via ebx
+    ; add current numInt into intArray, via ebx
+    mov     ebx, numInt                 
     mov     SDWORD PTR [esi], ebx
 
-    mov     numInt, ZERO                ; clear numInt for next iteration
+     ; clear numInt for next iteration
+    mov     numInt, ZERO               
     add     esi, TYPE intArray          
 
     LOOP    _getInputLoop
 
 ;--------------------------------------------------------------
-; Display back to the user their list of integers.
+; C. Display to the user their list of ten valid integers.
 ;--------------------------------------------------------------
+    ; Display Prompt
     mov     eax, offset userEntered
     mDisplayString  eax
 
-;--------------------------------------------------------------
-; This loop displays the integers in intArray, using the
-;   WriteVal procedure.
-;--------------------------------------------------------------
+    ;--------------------------------------------------------------
+    ; This loop displays the integers from intArray as ASCII  
+    ;   strings, using the WriteVal procedure.
+    ;--------------------------------------------------------------
 
     ; set up for _getInputLoop
     mov     ecx, LENGTHOF intArray
@@ -176,17 +185,30 @@ _displayIntArrayASCII:
     push    offset newString
     push    eax
     call    WriteVal
+
     mov     eax, offset comma
     mDisplayString  eax
 
     add     esi, TYPE intArray
     LOOP    _displayIntArrayASCII
 
+;--------------------------------------------------------------
+; D. Display to the user the sum
+;--------------------------------------------------------------
+    ; Calculate sum
+    ; Display prompt
+    ; Display sum
 
-; display the sum of the integers in intArray
+;--------------------------------------------------------------
+; E. Display to the user the rounded average.
+;--------------------------------------------------------------
+    ; Calculate average
+    ; Display prompt
+    ; Display average
 
-; display the rounded average of the integers in intArray
-
+;--------------------------------------------------------------
+; F. Goodbye
+;--------------------------------------------------------------
     push    offset goodbyeMessage
     call    Goodbye
 
@@ -436,8 +458,8 @@ ReadVal EndP
 ; Postconditions: None
 ;
 ; Receives:
-;           [ebp+]    =   reference output parameter, ASCII string
-;           [ebp+]    =   value input parameter, the SDWORD value to be converted
+;           [ebp+12]   =   reference output parameter, ASCII string
+;           [ebp+8]    =   value input parameter, the SDWORD value to be converted
 ;
 ; Returns: None
 ;---------------------------------------------------------------------------------
@@ -446,7 +468,9 @@ WriteVal PROC
     mov     ebp, esp
 
 
-
+    ; Use AL and STOSB to clear newString [ebp+12]
+    
+_finish:
     pop     ebp
     RET     8
 WriteVal EndP
