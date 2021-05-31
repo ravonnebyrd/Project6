@@ -79,10 +79,13 @@ LO_ASCII_DEC_NUM    =   48
 HI_ASCII_DEC_NUM    =   57
 
 NEG_SIGN            =   45
+POS_SIGN            =   43
+
 ZERO                =   0
 ONE                 =   1
 TEN                 =   10
 FORTY_EIGHT         =   48
+FIFTY               =   50
 
 .data
     ; string array variables
@@ -96,14 +99,14 @@ FORTY_EIGHT         =   48
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
-    userNum                     BYTE        50 DUP(?)           ; user input buffer
+    userNum                     BYTE        FIFTY DUP(?)           ; user input buffer
     maxCharUserNum              DWORD       SIZEOF userNum      ; max size of userNum
     byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
 
     ; ReadVal procedure variables
-    numInt                      SDWORD      0 
-    negate                      DWORD       0                   ; boolean
-    tempHoldAL                  SDWORD      0 
+    numInt                      SDWORD      ZERO 
+    negate                      DWORD       ZERO                   ; boolean
+    tempHoldAL                  SDWORD      ZERO 
     
 
 .code
@@ -224,8 +227,10 @@ _setUp:
 ;----------------------------------------------------------------------
 ; Validation Loop
 ;   The first time the loop iterates, it first checks if there is a neg
-;       sign. If there is, the loop will deal with negating the final
-;       output. After this first iteration, only numbers are allowed 
+;       or pos sign. 
+;       If there is a neg sign, the loop will deal with negating 
+;           the final output. If pos, jump to end of first loop.
+;       After this first iteration, only numbers are allowed...
 ;       (i.e. _noSymbolsValidationLoop).
 ;   This loop includes validation - that the user inputted string is
 ;       indeed a number, and that it's within the correct SDWORD range.
@@ -234,6 +239,8 @@ _validationLoop:
     LODSB
     cmp     AL, NEG_SIGN
     je      _negate
+    cmp     AL, POS_SIGN
+    je      _continueValidationFromNegate
     jmp     _firstValidationContinue
 
 _noSymbolsValidationLoop:
