@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    06/01/21 14:52:23
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Page 1 - 1
 
 
@@ -101,12 +101,14 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 
  = 0000002D			NEG_SIGN            =   45
  = 0000002B			POS_SIGN            =   43
+ = 0000003F			QUESTION            =   63
 
  = 00000000			ZERO                =   0
  = 00000001			ONE                 =   1
  = 00000009			NINE                =   9
  = 0000000A			TEN                 =   10
  = 0000000B			ELEVEN              =   11
+ = 0000000F			FIFTEEN             =   15
  = 00000030			FORTY_EIGHT         =   48
  = 00000032			FIFTY               =   50
 
@@ -164,18 +166,35 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 	   75 6E 64 65 64
 	   20 61 76 65 72
 	   61 67 65 2E 0D
-	   0A 00
-				                                            "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,0
- 00000106 50 6C 65 61 73	    userPrompt                  BYTE        "Please enter your integer: ",0
+	   0A 50 6C 65 61
+	   73 65 20 65 6E
+	   74 65 72 20 6E
+	   6F 20 6D 6F 72
+	   65 20 74 68 61
+	   6E 20 31 30 20
+	   63 68 61 72 61
+	   63 74 65 72 73
+	   2C 20 6F 72 20
+	   31 31 20 69 66
+	   20 75 73 69 6E
+	   67 20 61 20 6C
+	   65 61 64 69 6E
+	   67 20 73 69 67
+	   6E 20 28 2B 20
+	   6F 72 20 2D 29
+	   2E 20 0D 0A 00
+				                                            "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,
+				                                            "Please enter no more than 10 characters, or 11 if using a leading sign (+ or -). ",13,10,0
+ 00000159 50 6C 65 61 73	    userPrompt                  BYTE        "Please enter your integer: ",0
 	   65 20 65 6E 74
 	   65 72 20 79 6F
 	   75 72 20 69 6E
 	   74 65 67 65 72
 	   3A 20 00
- 00000122 54 72 79 20 61	    secondUserPrompt            BYTE        "Try again: ",0
+ 00000175 54 72 79 20 61	    secondUserPrompt            BYTE        "Try again: ",0
 	   67 61 69 6E 3A
 	   20 00
- 0000012E 41 72 65 20 79	    errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
+ 00000181 41 72 65 20 79	    errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
 	   6F 75 20 73 75
 	   72 65 20 74 68
 	   61 74 20 77 61
@@ -190,17 +209,17 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 	   20 33 32 2D 62
 	   69 74 73 2E 0D
 	   0A 00
- 00000176 59 6F 75 20 65	    userEntered                 BYTE        "You entered: ",0
+ 000001C9 59 6F 75 20 65	    userEntered                 BYTE        "You entered: ",0
 	   6E 74 65 72 65
 	   64 3A 20 00
- 00000184 54 68 65 69 72	    userSum                     BYTE        "Their sum: ",0
+ 000001D7 54 68 65 69 72	    userSum                     BYTE        "Their sum: ",0
 	   20 73 75 6D 3A
 	   20 00
- 00000190 54 68 65 69 72	    userAverage                 BYTE        "Their average: ",0
+ 000001E3 54 68 65 69 72	    userAverage                 BYTE        "Their average: ",0
 	   20 61 76 65 72
 	   61 67 65 3A 20
 	   00
- 000001A0 54 68 61 6E 6B	    goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
+ 000001F3 54 68 61 6E 6B	    goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 	   20 79 6F 75 20
 	   66 6F 72 20 79
 	   6F 75 72 20 70
@@ -215,34 +234,34 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 	   0D 0A 00
 
 				    ; variables for user input
- 000001DF  00000032 [		    userNum                     BYTE        FIFTY DUP(?)            ; user input buffer
+ 00000232  0000000F [		    userNum                     BYTE        FIFTEEN DUP(?)            ; user input buffer
 	    00
 	   ]
- 00000211 00000032		    maxCharUserNum              DWORD       SIZEOF userNum          ; max size of userNum
- 00000215 00000000		    byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
+ 00000241 0000000F		    maxCharUserNum              DWORD       SIZEOF userNum          ; max size of userNum
+ 00000245 00000000		    byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
 
 				    ; ReadVal procedure variables
- 00000219 00000000		    numInt                      SDWORD      ZERO 
- 0000021D 00000000		    negate                      DWORD       ZERO                    ; boolean
- 00000221 00000000		    tempHoldAL                  SDWORD      ZERO
+ 00000249 00000000		    numInt                      SDWORD      ZERO 
+ 0000024D 00000000		    negate                      DWORD       ZERO                    ; boolean
+ 00000251 00000000		    tempHoldAL                  SDWORD      ZERO
 				    
 				    ; main procedure loop variables
- 00000225  0000000A [		    intArray                    SDWORD      TEN DUP(?)
+ 00000255  0000000A [		    intArray                    SDWORD      TEN DUP(?)
 	    00000000
 	   ]
- 0000024D 0000000A		    lengthIntArray              SDWORD      LENGTHOF intArray
- 00000251 00000004		    typeIntArray                SDWORD      TYPE intArray
+ 0000027D 0000000A		    lengthIntArray              SDWORD      LENGTHOF intArray
+ 00000281 00000004		    typeIntArray                SDWORD      TYPE intArray
 
- 00000255 00000000		    sum                         SDWORD      ?
- 00000259 00000000		    average                     SDWORD      ?
- 0000025D 2C 20 00		    comma                       BYTE        ", ",0
- 00000260  00000032 [		    inString                    BYTE        FIFTY DUP(?)
+ 00000285 00000000		    sum                         SDWORD      ?
+ 00000289 00000000		    average                     SDWORD      ?
+ 0000028D 2C 20 00		    comma                       BYTE        ", ",0
+ 00000290  0000000F [		    inString                    BYTE        FIFTEEN DUP(?)
 	    00
 	   ]
- 00000292  00000032 [		    outstring                   BYTE        FIFTY DUP(?)
+ 0000029F  0000000F [		    outString                   BYTE        FIFTEEN DUP(?)
 	    00
 	   ]
- 000002C4 00000000		    intLength                   DWORD       0
+ 000002AE 00000000		    intLength                   DWORD       0
 
  00000000			.code
  00000000			main PROC
@@ -262,28 +281,28 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				    ;--------------------------------------------------------------
 				    ; set up for _getInputLoop
  0000000F  B9 0000000A		    mov     ecx, LENGTHOF intArray
- 00000014  BE 00000225 R	    mov     esi, offset intArray
+ 00000014  BE 00000255 R	    mov     esi, offset intArray
 
  00000019			_getInputLoop: 
- 00000019  68 00000221 R	    push    offset tempHoldAL
- 0000001E  68 0000012E R	    push    offset errorMessage
- 00000023  68 0000021D R	    push    offset negate
- 00000028  68 00000122 R	    push    offset secondUserPrompt
- 0000002D  68 00000219 R	    push    offset numInt
- 00000032  68 00000106 R	    push    offset userPrompt
- 00000037  68 000001DF R	    push    offset userNum
- 0000003C  FF 35 00000211 R	    push    maxCharUserNum
- 00000042  68 00000215 R	    push    offset byteCount
+ 00000019  68 00000251 R	    push    offset tempHoldAL
+ 0000001E  68 00000181 R	    push    offset errorMessage
+ 00000023  68 0000024D R	    push    offset negate
+ 00000028  68 00000175 R	    push    offset secondUserPrompt
+ 0000002D  68 00000249 R	    push    offset numInt
+ 00000032  68 00000159 R	    push    offset userPrompt
+ 00000037  68 00000232 R	    push    offset userNum
+ 0000003C  FF 35 00000241 R	    push    maxCharUserNum
+ 00000042  68 00000245 R	    push    offset byteCount
  00000047  E8 00000144		    call    ReadVal
 				    
 				    ; add current numInt into intArray, via ebx
- 0000004C  8B 1D 00000219 R	    mov     ebx, numInt                 
+ 0000004C  8B 1D 00000249 R	    mov     ebx, numInt                 
  00000052  89 1E		    mov     SDWORD PTR [esi], ebx
 
 				     ; clear numInt for next iteration
- 00000054  C7 05 00000219 R	    mov     numInt, ZERO               
+ 00000054  C7 05 00000249 R	    mov     numInt, ZERO               
 	   00000000
- 0000005E  03 35 00000251 R	    add     esi, typeIntArray          
+ 0000005E  03 35 00000281 R	    add     esi, typeIntArray          
 
  00000064  E2 B3		    LOOP    _getInputLoop
 
@@ -292,7 +311,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				;--------------------------------------------------------------
 				    ; Display Prompt
  00000066  E8 00000000 E	    call    CrLf
- 0000006B  B8 00000176 R	    mov     eax, offset userEntered
+ 0000006B  B8 000001C9 R	    mov     eax, offset userEntered
 				    mDisplayString  eax
  00000070  52		     1	    push    edx
  00000071  8B D0	     1	    mov     edx, eax
@@ -304,8 +323,8 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				    ;   strings, using the WriteVal procedure.
 				    ;--------------------------------------------------------------
 				    ; set up for _displayIntArrayASCII
- 00000079  8B 0D 0000024D R	    mov     ecx, lengthIntArray
- 0000007F  BE 00000225 R	    mov     esi, offset intArray
+ 00000079  8B 0D 0000027D R	    mov     ecx, lengthIntArray
+ 0000007F  BE 00000255 R	    mov     esi, offset intArray
  00000084  BB 00000000		    mov     ebx, ZERO
 
  00000089			_displayIntArrayASCII:
@@ -313,16 +332,16 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
  00000089  8B 06		    mov     eax, [esi]
 
 				    ; Write integer as ASCII
- 0000008B  68 000002C4 R	    push    offset  intLength
- 00000090  68 00000292 R	    push    offset  outString
- 00000095  68 00000260 R	    push    offset  inString
+ 0000008B  68 000002AE R	    push    offset  intLength
+ 00000090  68 0000029F R	    push    offset  outString
+ 00000095  68 00000290 R	    push    offset  inString
  0000009A  50			    push    eax
  0000009B  E8 000001EB		    call    WriteVal
 
  000000A0  83 FB 09		    cmp     ebx, NINE
  000000A3  74 0E		    je      _noComma
 				    ; Inserting comma after number
- 000000A5  B8 0000025D R	    mov     eax, offset comma
+ 000000A5  B8 0000028D R	    mov     eax, offset comma
 				    mDisplayString  eax
  000000AA  52		     1	    push    edx
  000000AB  8B D0	     1	    mov     edx, eax
@@ -339,15 +358,15 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				; D. Display to the user the sum
 				;--------------------------------------------------------------
 				    ; Calculate sum
- 000000B9  FF 35 0000024D R	    push    lengthIntArray
- 000000BF  FF 35 00000251 R	    push    typeIntArray
- 000000C5  68 00000255 R	    push    offset sum
- 000000CA  68 00000225 R	    push    offset intArray
+ 000000B9  FF 35 0000027D R	    push    lengthIntArray
+ 000000BF  FF 35 00000281 R	    push    typeIntArray
+ 000000C5  68 00000285 R	    push    offset sum
+ 000000CA  68 00000255 R	    push    offset intArray
  000000CF  E8 00000270		    call    CalculateSum
 
 				    ; Display prompt
  000000D4  E8 00000000 E	    call    CrLf
- 000000D9  B8 00000184 R	    mov     eax, offset userSum
+ 000000D9  B8 000001D7 R	    mov     eax, offset userSum
 				    mDisplayString  eax
  000000DE  52		     1	    push    edx
  000000DF  8B D0	     1	    mov     edx, eax
@@ -355,24 +374,24 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
  000000E6  5A		     1	    pop     edx
 
 				    ; Display sum
- 000000E7  68 000002C4 R	    push    offset  intLength
- 000000EC  68 00000292 R	    push    offset  outString
- 000000F1  68 00000260 R	    push    offset  inString
- 000000F6  FF 35 00000255 R	    push    sum
+ 000000E7  68 000002AE R	    push    offset  intLength
+ 000000EC  68 0000029F R	    push    offset  outString
+ 000000F1  68 00000290 R	    push    offset  inString
+ 000000F6  FF 35 00000285 R	    push    sum
  000000FC  E8 0000018A		    call    WriteVal
 
 				;--------------------------------------------------------------
 				; E. Display to the user the rounded average.
 				;--------------------------------------------------------------
 				    ; Calculate average
- 00000101  FF 35 0000024D R	    push    lengthIntArray
- 00000107  FF 35 00000255 R	    push    sum
- 0000010D  68 00000259 R	    push    offset average
+ 00000101  FF 35 0000027D R	    push    lengthIntArray
+ 00000107  FF 35 00000285 R	    push    sum
+ 0000010D  68 00000289 R	    push    offset average
  00000112  E8 00000253		    call    CalculateAverage
 
 				    ; Display prompt
  00000117  E8 00000000 E	    call    CrLf
- 0000011C  B8 00000190 R	    mov     eax, offset userAverage
+ 0000011C  B8 000001E3 R	    mov     eax, offset userAverage
 				    mDisplayString  eax
  00000121  52		     1	    push    edx
  00000122  8B D0	     1	    mov     edx, eax
@@ -380,10 +399,10 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
  00000129  5A		     1	    pop     edx
 
 				    ; Display average
- 0000012A  68 000002C4 R	    push    offset  intLength
- 0000012F  68 00000292 R	    push    offset  outString
- 00000134  68 00000260 R	    push    offset  inString
- 00000139  FF 35 00000259 R	    push    average
+ 0000012A  68 000002AE R	    push    offset  intLength
+ 0000012F  68 0000029F R	    push    offset  outString
+ 00000134  68 00000290 R	    push    offset  inString
+ 00000139  FF 35 00000289 R	    push    average
  0000013F  E8 00000147		    call    WriteVal
 
 				;--------------------------------------------------------------
@@ -391,7 +410,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				;--------------------------------------------------------------
  00000144  E8 00000000 E	    call    CrLf
  00000149  E8 00000000 E	    call    CrLf
- 0000014E  68 000001A0 R	    push    offset goodbyeMessage
+ 0000014E  68 000001F3 R	    push    offset goodbyeMessage
  00000153  E8 0000022D		    call    Goodbye
 
 				    Invoke ExitProcess,0	; exit to operating system
@@ -725,7 +744,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				;-------------------------------------------
  00000294  8B 45 20		    mov     eax, [ebp+32]
  00000297  83 C0 00		    add     eax, ZERO
- 0000029A  78 28		    js      _negativeSetUp
+ 0000029A  78 35		    js      _negativeSetUp
 
 				;-------------------------------------------------------
 				; Conversion Loops
@@ -740,123 +759,131 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
 				    ; set up edi to point to empty array
  0000029C  8B 7D 24		    mov     edi, [ebp+36]
  0000029F			_startConversionToPositiveASCII:
- 0000029F  BB 0000000A		    mov     ebx, TEN
- 000002A4  99			    cdq
- 000002A5  F7 FB		    idiv    ebx
+ 0000029F  50			    push    eax
+ 000002A0  B0 00		    mov     AL, ZERO
+ 000002A2  AA			    STOSB
+ 000002A3  58			    pop     eax
+				    ;--------------------------------------------
+				    ; Update count of string length
+				    ;--------------------------------------------
+ 000002A4  8B 4D 2C		    mov     ecx, [ebp+44]
+ 000002A7  8B 11		    mov     edx, [ecx]
+ 000002A9  42			    inc     edx
+ 000002AA  89 11		    mov     DWORD PTR [ecx], edx
+
+ 000002AC			_followingConversionLoops:
+ 000002AC  BB 0000000A		    mov     ebx, TEN
+ 000002B1  99			    cdq
+ 000002B2  F7 FB		    idiv    ebx
 				    ;--------------------------------------------
 				    ; Save Quotient in eax temporarily to ebx,
 				    ;   since we need AL for STOSB. Then restore
 				    ;--------------------------------------------
- 000002A7  8B D8		    mov     ebx, eax
- 000002A9  B9 00000030		    mov     ecx, FORTY_EIGHT
- 000002AE  03 D1		    add     edx, ecx
- 000002B0  8A C2		    mov     AL, DL
- 000002B2  AA			    STOSB
- 000002B3  8B C3		    mov     eax, ebx
+ 000002B4  8B D8		    mov     ebx, eax
+ 000002B6  B9 00000030		    mov     ecx, FORTY_EIGHT
+ 000002BB  03 D1		    add     edx, ecx
+ 000002BD  8A C2		    mov     AL, DL
+ 000002BF  AA			    STOSB
+ 000002C0  8B C3		    mov     eax, ebx
 
 				    ;--------------------------------------------
 				    ; Update count of string length
 				    ;--------------------------------------------
- 000002B5  8B 4D 2C		    mov     ecx, [ebp+44]
- 000002B8  8B 11		    mov     edx, [ecx]
- 000002BA  42			    inc     edx
- 000002BB  89 11		    mov     DWORD PTR [ecx], edx
+ 000002C2  8B 4D 2C		    mov     ecx, [ebp+44]
+ 000002C5  8B 11		    mov     edx, [ecx]
+ 000002C7  42			    inc     edx
+ 000002C8  89 11		    mov     DWORD PTR [ecx], edx
 
- 000002BD  83 F8 00		    cmp     eax, ZERO
- 000002C0  75 DD		    jne     _startConversionToPositiveASCII
- 000002C2  EB 35		    jmp     _reverseString
+ 000002CA  83 F8 00		    cmp     eax, ZERO
+ 000002CD  75 DD		    jne     _followingConversionLoops
+ 000002CF  EB 42		    jmp     _reverseString
 
- 000002C4			_negativeSetUp:
+ 000002D1			_negativeSetUp:
 				    ; set up edi to point to empty array
- 000002C4  8B 7D 24		    mov     edi, [ebp+36]
- 000002C7			_startConversionToNegativeASCII:
- 000002C7  BB 0000000A		    mov     ebx, TEN
- 000002CC  99			    cdq
- 000002CD  F7 FB		    idiv    ebx
+ 000002D1  8B 7D 24		    mov     edi, [ebp+36]
+
+ 000002D4			_startConversionToNegativeASCII:
+ 000002D4  50			    push    eax
+ 000002D5  B0 00		    mov     AL, ZERO
+ 000002D7  AA			    STOSB
+ 000002D8  58			    pop     eax
+				    ;--------------------------------------------
+				    ; Update count of string length
+				    ;--------------------------------------------
+ 000002D9  8B 4D 2C		    mov     ecx, [ebp+44]
+ 000002DC  8B 11		    mov     edx, [ecx]
+ 000002DE  42			    inc     edx
+ 000002DF  89 11		    mov     DWORD PTR [ecx], edx
+
+ 000002E1			_followingConversionLoopsNeg:
+ 000002E1  BB 0000000A		    mov     ebx, TEN
+ 000002E6  99			    cdq
+ 000002E7  F7 FB		    idiv    ebx
 				    ;--------------------------------------------
 				    ; Save Quotient in eax temporarily to ebx,
 				    ;   since we need AL for STOSB. Then restore.
 				    ;   For Neg SDWORDS, must negate edx to add.
 				    ;--------------------------------------------
- 000002CF  8B D8		    mov     ebx, eax
- 000002D1  B9 00000030		    mov     ecx, FORTY_EIGHT
- 000002D6  F7 DA		    neg     edx
- 000002D8  03 D1		    add     edx, ecx
- 000002DA  8A C2		    mov     AL, DL
- 000002DC  AA			    STOSB
- 000002DD  8B C3		    mov     eax, ebx
+ 000002E9  8B D8		    mov     ebx, eax
+ 000002EB  B9 00000030		    mov     ecx, FORTY_EIGHT
+ 000002F0  F7 DA		    neg     edx
+ 000002F2  03 D1		    add     edx, ecx
+ 000002F4  8A C2		    mov     AL, DL
+ 000002F6  AA			    STOSB
+ 000002F7  8B C3		    mov     eax, ebx
 
 				    ;--------------------------------------------
 				    ; Update count of string length
 				    ;--------------------------------------------
- 000002DF  8B 4D 2C		    mov     ecx, [ebp+44]
- 000002E2  8B 11		    mov     edx, [ecx]
- 000002E4  42			    inc     edx
- 000002E5  89 11		    mov     DWORD PTR [ecx], edx
+ 000002F9  8B 4D 2C		    mov     ecx, [ebp+44]
+ 000002FC  8B 11		    mov     edx, [ecx]
+ 000002FE  42			    inc     edx
+ 000002FF  89 11		    mov     DWORD PTR [ecx], edx
 
 				    ;--------------------------------------------
 				    ; Once ecx is zero, can exit loop
 				    ;--------------------------------------------
- 000002E7  83 F8 00		    cmp     eax, ZERO
- 000002EA  75 DB		    jne     _startConversionToNegativeASCII
- 000002EC  B0 2D		    mov     AL, NEG_SIGN
- 000002EE  AA			    STOSB
+ 00000301  83 F8 00		    cmp     eax, ZERO
+ 00000304  75 DB		    jne     _followingConversionLoopsNeg
+ 00000306  B0 2D		    mov     AL, NEG_SIGN
+ 00000308  AA			    STOSB
 				    ;--------------------------------------------
 				    ; Update count of string length, to
 				    ;   account for the negative sign
 				    ;--------------------------------------------
- 000002EF  8B 4D 2C		    mov     ecx, [ebp+44]
- 000002F2  8B 11		    mov     edx, [ecx]
- 000002F4  42			    inc     edx
- 000002F5  89 11		    mov     DWORD PTR [ecx], edx
- 000002F7  EB 00		    jmp     _reverseString
+ 00000309  8B 4D 2C		    mov     ecx, [ebp+44]
+ 0000030C  8B 11		    mov     edx, [ecx]
+ 0000030E  42			    inc     edx
+ 0000030F  89 11		    mov     DWORD PTR [ecx], edx
+ 00000311  EB 00		    jmp     _reverseString
 
 				;-----------------------------------------------------------
 				; Reverse String
 				;    String must be reversed in order to display correctly
 				;-----------------------------------------------------------
- 000002F9			_reverseString:
- 000002F9  8B 4D 2C		    mov     ecx, [ebp+44]
- 000002FC  8B 09		    mov     ecx, [ecx]
- 000002FE  8B 75 24		    mov     esi, [ebp+36]
- 00000301  03 F1		    add     esi, ecx
- 00000303  4E			    dec     esi
- 00000304  8B 7D 28		    mov     edi, [ebp+40]
+ 00000313			_reverseString:
+ 00000313  8B 4D 2C		    mov     ecx, [ebp+44]
+ 00000316  8B 09		    mov     ecx, [ecx]
+ 00000318  8B 75 24		    mov     esi, [ebp+36]
+ 0000031B  03 F1		    add     esi, ecx
+ 0000031D  4E			    dec     esi
+ 0000031E  8B 7D 28		    mov     edi, [ebp+40]
 
- 00000307			_reverseLoop:
- 00000307  FD			    STD
- 00000308  AC			    LODSB
- 00000309  FC			    CLD
- 0000030A  AA			    STOSB
- 0000030B  E2 FA		    LOOP    _reverseLoop
+ 00000321			_reverseLoop:
+ 00000321  FD			    STD
+ 00000322  AC			    LODSB
+ 00000323  FC			    CLD
+ 00000324  AA			    STOSB
+ 00000325  E2 FA		    LOOP    _reverseLoop
 
- 0000030D			_printString:
+ 00000327			_printString:
 				    mDisplayString  [ebp+40]
- 0000030D  52		     1	    push    edx
- 0000030E  8B 55 28	     1	    mov     edx, [ebp+40]
- 00000311  E8 00000000 E     1	    call    WriteString
- 00000316  5A		     1	    pop     edx
+ 00000327  52		     1	    push    edx
+ 00000328  8B 55 28	     1	    mov     edx, [ebp+40]
+ 0000032B  E8 00000000 E     1	    call    WriteString
+ 00000330  5A		     1	    pop     edx
 
- 00000317			_finish:
-				    ;--------------------------------------------
-				    ; Use AL and STOSB to clear in/outString
-				    ;--------------------------------------------
- 00000317  8B 75 24		    mov     esi, [ebp+36]
- 0000031A  8B 4D 2C		    mov     ecx, [ebp+44]
- 0000031D  8B 09		    mov     ecx, [ecx]
- 0000031F			_clearInString:
- 0000031F  B0 00		    mov     AL, ZERO
- 00000321  AC			    LODSB   
- 00000322  E2 FB		    LOOP    _clearInString
-
- 00000324  8B 75 28		    mov     esi, [ebp+40]
- 00000327  8B 4D 2C		    mov     ecx, [ebp+44]
- 0000032A  8B 09		    mov     ecx, [ecx]
- 0000032C			_clearInStringTwo:
- 0000032C  B0 00		    mov     AL, 0
- 0000032E  AC			    LODSB   
- 0000032F  E2 FB		    LOOP    _clearInStringTwo
-
+ 00000331			_finish:
 				    ;--------------------------------------------
 				    ; Reset count of string length
 				    ;--------------------------------------------
@@ -998,7 +1025,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
  00000396			Goodbye EndP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 23:29:34
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    06/01/21 14:52:23
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Symbols 2 - 1
 
 
@@ -1100,7 +1127,7 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000002C8 Para	  Public  'DATA'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000002B2 Para	  Public  'DATA'	
 _TEXT  . . . . . . . . . . . . .	32 Bit	 00000396 Para	  Public  'CODE'	
 
 
@@ -1230,14 +1257,14 @@ WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteVal . . . . . . . . . . . .	P Near	 0000028B _TEXT	Length= 000000B9 Public STDCALL
   _startConversionToPositiveASCII 	L Near	 0000029F _TEXT	
-  _negativeSetUp . . . . . . . .	L Near	 000002C4 _TEXT	
-  _startConversionToNegativeASCII 	L Near	 000002C7 _TEXT	
-  _reverseString . . . . . . . .	L Near	 000002F9 _TEXT	
-  _reverseLoop . . . . . . . . .	L Near	 00000307 _TEXT	
-  _printString . . . . . . . . .	L Near	 0000030D _TEXT	
-  _finish  . . . . . . . . . . .	L Near	 00000317 _TEXT	
-  _clearInString . . . . . . . .	L Near	 0000031F _TEXT	
-  _clearInStringTwo  . . . . . .	L Near	 0000032C _TEXT	
+  _followingConversionLoops  . .	L Near	 000002AC _TEXT	
+  _negativeSetUp . . . . . . . .	L Near	 000002D1 _TEXT	
+  _startConversionToNegativeASCII 	L Near	 000002D4 _TEXT	
+  _followingConversionLoopsNeg .	L Near	 000002E1 _TEXT	
+  _reverseString . . . . . . . .	L Near	 00000313 _TEXT	
+  _reverseLoop . . . . . . . . .	L Near	 00000321 _TEXT	
+  _printString . . . . . . . . .	L Near	 00000327 _TEXT	
+  _finish  . . . . . . . . . . .	L Near	 00000331 _TEXT	
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000015F Public STDCALL
   _getInputLoop  . . . . . . . .	L Near	 00000019 _TEXT	
@@ -1278,6 +1305,7 @@ ENABLE_WINDOW_INPUT  . . . . . .	Number	 00000008h
 ENABLE_WRAP_AT_EOL_OUTPUT  . . .	Number	 00000002h   
 ENHANCED_KEY . . . . . . . . . .	Number	 00000100h   
 FALSE  . . . . . . . . . . . . .	Number	 00000000h   
+FIFTEEN  . . . . . . . . . . . .	Number	 0000000Fh   
 FIFTY  . . . . . . . . . . . . .	Number	 00000032h   
 FILE_APPEND_DATA . . . . . . . .	Number	 00000004h   
 FILE_ATTRIBUTE_ARCHIVE . . . . .	Number	 00000020h   
@@ -1377,6 +1405,7 @@ OPEN_ALWAYS  . . . . . . . . . .	Number	 00000004h
 OPEN_EXISTING  . . . . . . . . .	Number	 00000003h   
 POS_SIGN . . . . . . . . . . . .	Number	 0000002Bh   
 PeekConsoleInput . . . . . . . .	Text   	 PeekConsoleInputA
+QUESTION . . . . . . . . . . . .	Number	 0000003Fh   
 RIGHT_ALT_PRESSED  . . . . . . .	Number	 00000001h   
 RIGHT_CTRL_PRESSED . . . . . . .	Number	 00000004h   
 ReadConsoleInput . . . . . . . .	Text   	 ReadConsoleInputA
@@ -1474,22 +1503,22 @@ WINDOW_BUFFER_SIZE_EVENT . . . .	Number	 00000004h
 WriteConsoleOutputCharacter  . .	Text   	 WriteConsoleOutputCharacterA
 WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 ZERO . . . . . . . . . . . . . .	Number	 00000000h   
-average  . . . . . . . . . . . .	DWord	 00000259 _DATA	
+average  . . . . . . . . . . . .	DWord	 00000289 _DATA	
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
-byteCount  . . . . . . . . . . .	DWord	 00000215 _DATA	
-comma  . . . . . . . . . . . . .	Byte	 0000025D _DATA	
+byteCount  . . . . . . . . . . .	DWord	 00000245 _DATA	
+comma  . . . . . . . . . . . . .	Byte	 0000028D _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
-errorMessage . . . . . . . . . .	Byte	 0000012E _DATA	
+errorMessage . . . . . . . . . .	Byte	 00000181 _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
-goodbyeMessage . . . . . . . . .	Byte	 000001A0 _DATA	
+goodbyeMessage . . . . . . . . .	Byte	 000001F3 _DATA	
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
-inString . . . . . . . . . . . .	Byte	 00000260 _DATA	
-intArray . . . . . . . . . . . .	DWord	 00000225 _DATA	
-intLength  . . . . . . . . . . .	DWord	 000002C4 _DATA	
-lengthIntArray . . . . . . . . .	DWord	 0000024D _DATA	
+inString . . . . . . . . . . . .	Byte	 00000290 _DATA	
+intArray . . . . . . . . . . . .	DWord	 00000255 _DATA	
+intLength  . . . . . . . . . . .	DWord	 000002AE _DATA	
+lengthIntArray . . . . . . . . .	DWord	 0000027D _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
 lightCyan  . . . . . . . . . . .	Number	 0000000Bh   
 lightGray  . . . . . . . . . . .	Number	 00000007h   
@@ -1497,22 +1526,22 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
-maxCharUserNum . . . . . . . . .	DWord	 00000211 _DATA	
-negate . . . . . . . . . . . . .	DWord	 0000021D _DATA	
-numInt . . . . . . . . . . . . .	DWord	 00000219 _DATA	
-outstring  . . . . . . . . . . .	Byte	 00000292 _DATA	
+maxCharUserNum . . . . . . . . .	DWord	 00000241 _DATA	
+negate . . . . . . . . . . . . .	DWord	 0000024D _DATA	
+numInt . . . . . . . . . . . . .	DWord	 00000249 _DATA	
+outString  . . . . . . . . . . .	Byte	 0000029F _DATA	
 programDescription . . . . . . .	Byte	 00000041 _DATA	
 programTitle . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
-secondUserPrompt . . . . . . . .	Byte	 00000122 _DATA	
-sum  . . . . . . . . . . . . . .	DWord	 00000255 _DATA	
-tempHoldAL . . . . . . . . . . .	DWord	 00000221 _DATA	
-typeIntArray . . . . . . . . . .	DWord	 00000251 _DATA	
-userAverage  . . . . . . . . . .	Byte	 00000190 _DATA	
-userEntered  . . . . . . . . . .	Byte	 00000176 _DATA	
-userNum  . . . . . . . . . . . .	Byte	 000001DF _DATA	
-userPrompt . . . . . . . . . . .	Byte	 00000106 _DATA	
-userSum  . . . . . . . . . . . .	Byte	 00000184 _DATA	
+secondUserPrompt . . . . . . . .	Byte	 00000175 _DATA	
+sum  . . . . . . . . . . . . . .	DWord	 00000285 _DATA	
+tempHoldAL . . . . . . . . . . .	DWord	 00000251 _DATA	
+typeIntArray . . . . . . . . . .	DWord	 00000281 _DATA	
+userAverage  . . . . . . . . . .	Byte	 000001E3 _DATA	
+userEntered  . . . . . . . . . .	Byte	 000001C9 _DATA	
+userNum  . . . . . . . . . . . .	Byte	 00000232 _DATA	
+userPrompt . . . . . . . . . . .	Byte	 00000159 _DATA	
+userSum  . . . . . . . . . . . .	Byte	 000001D7 _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   

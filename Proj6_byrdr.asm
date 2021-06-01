@@ -80,12 +80,14 @@ HI_ASCII_DEC_NUM    =   57
 
 NEG_SIGN            =   45
 POS_SIGN            =   43
+QUESTION            =   63
 
 ZERO                =   0
 ONE                 =   1
 NINE                =   9
 TEN                 =   10
 ELEVEN              =   11
+FIFTEEN             =   15
 FORTY_EIGHT         =   48
 FIFTY               =   50
 
@@ -93,7 +95,8 @@ FIFTY               =   50
     ; string array variables
     programTitle                BYTE        "Lower-Level I/O Procedures for Numerical Strings by Ravonne Byrd",0
     programDescription          BYTE        "If you input 10 integers that can each fit in range [-2147483648, 2147483647] (inclusive),",13,10,
-                                            "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,0
+                                            "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,
+                                            "Please enter no more than 10 characters, or 11 if using a leading sign (+ or -). ",13,10,0
     userPrompt                  BYTE        "Please enter your integer: ",0
     secondUserPrompt            BYTE        "Try again: ",0
     errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
@@ -103,7 +106,7 @@ FIFTY               =   50
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
-    userNum                     BYTE        FIFTY DUP(?)            ; user input buffer
+    userNum                     BYTE        FIFTEEN DUP(?)            ; user input buffer
     maxCharUserNum              DWORD       SIZEOF userNum          ; max size of userNum
     byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
 
@@ -120,8 +123,8 @@ FIFTY               =   50
     sum                         SDWORD      ?
     average                     SDWORD      ?
     comma                       BYTE        ", ",0
-    inString                    BYTE        FIFTY DUP(?)
-    outstring                   BYTE        FIFTY DUP(?)
+    inString                    BYTE        FIFTEEN DUP(?)
+    outString                   BYTE        FIFTEEN DUP(?)
     intLength                   DWORD       0
 
 .code
@@ -506,7 +509,8 @@ ReadVal EndP
 ;   It will then print the numeric ASCII string
 ;
 ; Preconditions: 
-;               Uses mDisplayString to print the ASCII string.
+;               Uses mDisplayString to print the ASCII string, which cannot
+;                   accept input via edx.
 ;
 ; Postconditions: None
 ;
@@ -539,10 +543,24 @@ WriteVal PROC USES eax edx ebx ecx edi esi
 ;   Negative SDWORDS handled separately since with IDIV,
 ;       the remainder keep the sign of the dividend 
 ;       (which could cause problems when adding 48).
+;   Both loos begin by adding the null terminator first.
 ;-------------------------------------------------------
     ; set up edi to point to empty array
     mov     edi, [ebp+36]
 _startConversionToPositiveASCII:
+    push    eax
+    mov     AL, ZERO
+    STOSB
+    pop     eax
+    ;--------------------------------------------
+    ; Update count of string length
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     edx, [ecx]
+    inc     edx
+    mov     DWORD PTR [ecx], edx
+
+_followingConversionLoops:
     mov     ebx, TEN
     cdq
     idiv    ebx
@@ -566,13 +584,27 @@ _startConversionToPositiveASCII:
     mov     DWORD PTR [ecx], edx
 
     cmp     eax, ZERO
-    jne     _startConversionToPositiveASCII
+    jne     _followingConversionLoops
     jmp     _reverseString
 
 _negativeSetUp:
     ; set up edi to point to empty array
     mov     edi, [ebp+36]
+
 _startConversionToNegativeASCII:
+    push    eax
+    mov     AL, ZERO
+    STOSB
+    pop     eax
+    ;--------------------------------------------
+    ; Update count of string length
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     edx, [ecx]
+    inc     edx
+    mov     DWORD PTR [ecx], edx
+
+_followingConversionLoopsNeg:
     mov     ebx, TEN
     cdq
     idiv    ebx
@@ -601,7 +633,7 @@ _startConversionToNegativeASCII:
     ; Once ecx is zero, can exit loop
     ;--------------------------------------------
     cmp     eax, ZERO
-    jne     _startConversionToNegativeASCII
+    jne     _followingConversionLoopsNeg
     mov     AL, NEG_SIGN
     STOSB
     ;--------------------------------------------
@@ -637,25 +669,6 @@ _printString:
     mDisplayString  [ebp+40]
 
 _finish:
-    ;--------------------------------------------
-    ; Use AL and STOSB to clear in/outString
-    ;--------------------------------------------
-    mov     esi, [ebp+36]
-    mov     ecx, [ebp+44]
-    mov     ecx, [ecx]
-_clearInString:
-    mov     AL, ZERO
-    LODSB   
-    LOOP    _clearInString
-
-    mov     esi, [ebp+40]
-    mov     ecx, [ebp+44]
-    mov     ecx, [ecx]
-_clearInStringTwo:
-    mov     AL, 0
-    LODSB   
-    LOOP    _clearInStringTwo
-
     ;--------------------------------------------
     ; Reset count of string length
     ;--------------------------------------------
