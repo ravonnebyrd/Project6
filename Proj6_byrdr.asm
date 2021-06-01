@@ -83,6 +83,7 @@ POS_SIGN            =   43
 
 ZERO                =   0
 ONE                 =   1
+NINE                =   9
 TEN                 =   10
 ELEVEN              =   11
 FORTY_EIGHT         =   48
@@ -91,9 +92,8 @@ FIFTY               =   50
 .data
     ; string array variables
     programTitle                BYTE        "Lower-Level I/O Procedures for Numerical Strings by Ravonne Byrd",0
-    programDescription          BYTE        "If you input 10 integers that can each fit in a signed doubleword,",13,10,
-                                            "this program will display that list of integers, as well as",13,10,
-                                            "report back their sum and rounded average.",13,10,0
+    programDescription          BYTE        "If you input 10 integers that can each fit in range [-2147483648, 2147483647] (inclusive),",13,10,
+                                            "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,0
     userPrompt                  BYTE        "Please enter your integer: ",0
     secondUserPrompt            BYTE        "Try again: ",0
     errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
@@ -103,24 +103,26 @@ FIFTY               =   50
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
-    userNum                     BYTE        FIFTY DUP(?)           ; user input buffer
-    maxCharUserNum              DWORD       SIZEOF userNum      ; max size of userNum
-    byteCount                   DWORD       ?                   ; holds count of actual bytes used in userNum
+    userNum                     BYTE        FIFTY DUP(?)            ; user input buffer
+    maxCharUserNum              DWORD       SIZEOF userNum          ; max size of userNum
+    byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
 
     ; ReadVal procedure variables
     numInt                      SDWORD      ZERO 
-    negate                      DWORD       ZERO                   ; boolean
+    negate                      DWORD       ZERO                    ; boolean
     tempHoldAL                  SDWORD      ZERO
     
     ; main procedure loop variables
     intArray                    SDWORD      TEN DUP(?)
-    lengthIntArray              SDWORD       LENGTHOF intArray
-    typeIntArray                SDWORD       TYPE intArray
+    lengthIntArray              SDWORD      LENGTHOF intArray
+    typeIntArray                SDWORD      TYPE intArray
 
     sum                         SDWORD      ?
     average                     SDWORD      ?
     comma                       BYTE        ", ",0
-    newString                   BYTE        ELEVEN DUP(?)
+    inString                    BYTE        FIFTY DUP(?)
+    outstring                   BYTE        FIFTY DUP(?)
+    intLength                   DWORD       0
 
 .code
 main PROC
@@ -168,6 +170,7 @@ _getInputLoop:
 ; C. Display to the user their list of ten valid integers.
 ;--------------------------------------------------------------
     ; Display Prompt
+    call    CrLf
     mov     eax, offset userEntered
     mDisplayString  eax
 
@@ -178,21 +181,28 @@ _getInputLoop:
     ; set up for _displayIntArrayASCII
     mov     ecx, lengthIntArray
     mov     esi, offset intArray
+    mov     ebx, ZERO
 
 _displayIntArrayASCII:
     ; put element (int) into eax
     mov     eax, [esi]
 
     ; Write integer as ASCII
-    push    offset newString
+    push    offset  intLength
+    push    offset  outString
+    push    offset  inString
     push    eax
     call    WriteVal
 
+    cmp     ebx, NINE
+    je      _noComma
     ; Inserting comma after number
     mov     eax, offset comma
     mDisplayString  eax
 
-    ; increment esi
+_noComma:
+    ; increment esi and ebx
+    inc     ebx
     add     esi, TYPE intArray
     LOOP    _displayIntArrayASCII
 
@@ -207,10 +217,14 @@ _displayIntArrayASCII:
     call    CalculateSum
 
     ; Display prompt
+    call    CrLf
     mov     eax, offset userSum
     mDisplayString  eax
 
     ; Display sum
+    push    offset  intLength
+    push    offset  outString
+    push    offset  inString
     push    sum
     call    WriteVal
 
@@ -224,16 +238,22 @@ _displayIntArrayASCII:
     call    CalculateAverage
 
     ; Display prompt
+    call    CrLf
     mov     eax, offset userAverage
     mDisplayString  eax
 
     ; Display average
+    push    offset  intLength
+    push    offset  outString
+    push    offset  inString
     push    average
     call    WriteVal
 
 ;--------------------------------------------------------------
 ; F. Goodbye
 ;--------------------------------------------------------------
+    call    CrLf
+    call    CrLf
     push    offset goodbyeMessage
     call    Goodbye
 
@@ -314,7 +334,7 @@ _tryAgain:
     mGetString      [ebp+48], [ebp+36], [ebp+32], [ebp+28]
 
 ;----------------------------------------------------------------------
-; Setting Up the Validation Loop
+; Setting Up the Conversion Loop
 ;   Moving esi to point to the user entered string [ebp+36]
 ;   Moving ecx to equal the actual amount bytes in the user string. 
 ;----------------------------------------------------------------------
@@ -323,28 +343,28 @@ _setUp:
     mov     ecx, [ebp+28]               
 
 ;----------------------------------------------------------------------
-; Validation Loop
+; Conversion Loop
 ;   The first time the loop iterates, it first checks if there is a neg
 ;       or pos sign. If there is a neg sign, the loop will deal with  
 ;       negating the final output. 
 ;   For both neg or pos, must skip aritmetic and jump to end of loop.
 ;   After this first iteration, only numbers are allowed...
-;       (i.e. _noSymbolsValidationLoop).
+;       (i.e. _noSymbolsContinueConversion).
 ;   This loop includes validation - that the user inputted string is
 ;       indeed a number, and that it's within the correct SDWORD range.
 ;   While validating, this loop is creating SDWORD from ASCII values.
 ;----------------------------------------------------------------------
-_validationLoop:
+_startConversionToSDWORD:
     LODSB
     cmp     AL, NEG_SIGN
     je      _negate
     cmp     AL, POS_SIGN
-    je      _continueValidationFromNegPosSign
-    jmp     _firstValidationContinue
+    je      _continueConversionFromNegPosSign
+    jmp     _firstPassContinue
 
-_noSymbolsValidationLoop:
+_noSymbolsContinueConversion:
     LODSB
-_firstValidationContinue:
+_firstPassContinue:
     cmp     AL, LO_ASCII_DEC_NUM
     jb      _error
     cmp     AL, HI_ASCII_DEC_NUM
@@ -381,13 +401,13 @@ _firstValidationContinue:
     ;--------------------------------------------------------------------------
     cmp     ecx, ONE
     je      _rangeCheck
-_continueValidationFromRangeCheck:
+_continueConversionFromRangeCheck:
     mov     ebx, [ebp+44]               
     mov     DWORD PTR [ebx], eax        ; 5
-_continueValidationFromNegPosSign:
+_continueConversionFromNegPosSign:
     dec     ecx
     cmp     ecx, ZERO
-    ja      _noSymbolsValidationLoop
+    ja      _noSymbolsContinueConversion
     
     ;-----------------------------------------------------------------------
     ; After exiting the validation loop:
@@ -427,7 +447,7 @@ _error:
 _negate:
     mov     ebx, [ebp+52]
     mov     DWORD PTR [ebx], ONE
-    jmp     _continueValidationFromNegPosSign
+    jmp     _continueConversionFromNegPosSign
 
 ;----------------------------------------------------------------------
 ; After loop has run and numInt is valid but needs negation,
@@ -462,12 +482,12 @@ _RangeCheck:
 _checkRangeNegative:
     cmp     eax, LO_INT_SDWORD
     ja      _error
-    jmp     _continueValidationFromRangeCheck
+    jmp     _continueConversionFromRangeCheck
 
 _checkRangePositive:
     cmp     eax, HI_INT_SDWORD
     ja      _error
-    jmp     _continueValidationFromRangeCheck
+    jmp     _continueConversionFromRangeCheck
 
 _finish:
     ; clear negate
@@ -491,21 +511,159 @@ ReadVal EndP
 ; Postconditions: None
 ;
 ; Receives:
-;           [ebp+12]   =   reference output parameter, ASCII string
-;           [ebp+8]    =   value input parameter, the SDWORD value to be converted
+;           [ebp+44]   =   reference output parameter, string length
+;           [ebp+40]   =   reference output parameter, ASCII string, outString
+;           [ebp+36]   =   reference output parameter, string BYTE array, inString
+;           [ebp+32]   =   value input parameter, the SDWORD value to be converted
 ;
 ; Returns: None
 ;---------------------------------------------------------------------------------
-WriteVal PROC
+WriteVal PROC USES eax edx ebx ecx edi esi
     push    ebp
     mov     ebp, esp
 
+;-------------------------------------------
+; Check if value is negative
+;   If so, set the negate boolean
+;-------------------------------------------
+    mov     eax, [ebp+32]
+    add     eax, ZERO
+    js      _negativeSetUp
 
-    ; Use AL and STOSB to clear newString [ebp+12]
-    
+;-------------------------------------------------------
+; Conversion Loops
+;   These conversions rely on dividing the SDWORD by 10
+;       to isolate in order digits, from right to left.
+;   Once isolated (as a remainder in edx), add 48 to get
+;       the digit's ASCII representation. 
+;   Negative SDWORDS handled separately since with IDIV,
+;       the remainder keep the sign of the dividend 
+;       (which could cause problems when adding 48).
+;-------------------------------------------------------
+    ; set up edi to point to empty array
+    mov     edi, [ebp+36]
+_startConversionToPositiveASCII:
+    mov     ebx, TEN
+    cdq
+    idiv    ebx
+    ;--------------------------------------------
+    ; Save Quotient in eax temporarily to ebx,
+    ;   since we need AL for STOSB. Then restore
+    ;--------------------------------------------
+    mov     ebx, eax
+    mov     ecx, FORTY_EIGHT
+    add     edx, ecx
+    mov     AL, DL
+    STOSB
+    mov     eax, ebx
+
+    ;--------------------------------------------
+    ; Update count of string length
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     edx, [ecx]
+    inc     edx
+    mov     DWORD PTR [ecx], edx
+
+    cmp     eax, ZERO
+    jne     _startConversionToPositiveASCII
+    jmp     _reverseString
+
+_negativeSetUp:
+    ; set up edi to point to empty array
+    mov     edi, [ebp+36]
+_startConversionToNegativeASCII:
+    mov     ebx, TEN
+    cdq
+    idiv    ebx
+    ;--------------------------------------------
+    ; Save Quotient in eax temporarily to ebx,
+    ;   since we need AL for STOSB. Then restore.
+    ;   For Neg SDWORDS, must negate edx to add.
+    ;--------------------------------------------
+    mov     ebx, eax
+    mov     ecx, FORTY_EIGHT
+    neg     edx
+    add     edx, ecx
+    mov     AL, DL
+    STOSB
+    mov     eax, ebx
+
+    ;--------------------------------------------
+    ; Update count of string length
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     edx, [ecx]
+    inc     edx
+    mov     DWORD PTR [ecx], edx
+
+    ;--------------------------------------------
+    ; Once ecx is zero, can exit loop
+    ;--------------------------------------------
+    cmp     eax, ZERO
+    jne     _startConversionToNegativeASCII
+    mov     AL, NEG_SIGN
+    STOSB
+    ;--------------------------------------------
+    ; Update count of string length, to
+    ;   account for the negative sign
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     edx, [ecx]
+    inc     edx
+    mov     DWORD PTR [ecx], edx
+    jmp     _reverseString
+
+;-----------------------------------------------------------
+; Reverse String
+;    String must be reversed in order to display correctly
+;-----------------------------------------------------------
+_reverseString:
+    mov     ecx, [ebp+44]
+    mov     ecx, [ecx]
+    mov     esi, [ebp+36]
+    add     esi, ecx
+    dec     esi
+    mov     edi, [ebp+40]
+
+_reverseLoop:
+    STD
+    LODSB
+    CLD
+    STOSB
+    LOOP    _reverseLoop
+
+_printString:
+    mDisplayString  [ebp+40]
+
 _finish:
+    ;--------------------------------------------
+    ; Use AL and STOSB to clear in/outString
+    ;--------------------------------------------
+    mov     esi, [ebp+36]
+    mov     ecx, [ebp+44]
+    mov     ecx, [ecx]
+_clearInString:
+    mov     AL, ZERO
+    LODSB   
+    LOOP    _clearInString
+
+    mov     esi, [ebp+40]
+    mov     ecx, [ebp+44]
+    mov     ecx, [ecx]
+_clearInStringTwo:
+    mov     AL, 0
+    LODSB   
+    LOOP    _clearInStringTwo
+
+    ;--------------------------------------------
+    ; Reset count of string length
+    ;--------------------------------------------
+    mov     ecx, [ebp+44]
+    mov     DWORD PTR [ecx], ZERO
+
     pop     ebp
-    RET     8
+    RET     16
 WriteVal EndP
 
 ;---------------------------------------------------------------------------------
