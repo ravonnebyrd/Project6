@@ -114,6 +114,9 @@ FIFTY               =   50
     
     ; main procedure loop variables
     intArray                    SDWORD      TEN DUP(?)
+    lengthIntArray              SDWORD       LENGTHOF intArray
+    typeIntArray                SDWORD       TYPE intArray
+
     sum                         SDWORD      ?
     average                     SDWORD      ?
     comma                       BYTE        ", ",0
@@ -135,13 +138,11 @@ main PROC
     ; This loop gets ten valid signed integers from the user.
     ;   It will store these integers in the array, intArray.
     ;--------------------------------------------------------------
-
     ; set up for _getInputLoop
     mov     ecx, LENGTHOF intArray
     mov     esi, offset intArray
 
 _getInputLoop: 
-    
     push    offset tempHoldAL
     push    offset errorMessage
     push    offset negate
@@ -159,7 +160,7 @@ _getInputLoop:
 
      ; clear numInt for next iteration
     mov     numInt, ZERO               
-    add     esi, TYPE intArray          
+    add     esi, typeIntArray          
 
     LOOP    _getInputLoop
 
@@ -174,21 +175,24 @@ _getInputLoop:
     ; This loop displays the integers from intArray as ASCII  
     ;   strings, using the WriteVal procedure.
     ;--------------------------------------------------------------
-
-    ; set up for _getInputLoop
-    mov     ecx, LENGTHOF intArray
+    ; set up for _displayIntArrayASCII
+    mov     ecx, lengthIntArray
     mov     esi, offset intArray
 
 _displayIntArrayASCII:
+    ; put element (int) into eax
     mov     eax, [esi]
 
+    ; Write integer as ASCII
     push    offset newString
     push    eax
     call    WriteVal
 
+    ; Inserting comma after number
     mov     eax, offset comma
     mDisplayString  eax
 
+    ; increment esi
     add     esi, TYPE intArray
     LOOP    _displayIntArrayASCII
 
@@ -196,15 +200,36 @@ _displayIntArrayASCII:
 ; D. Display to the user the sum
 ;--------------------------------------------------------------
     ; Calculate sum
+    push    lengthIntArray
+    push    typeIntArray
+    push    offset sum
+    push    offset intArray
+    call    CalculateSum
+
     ; Display prompt
+    mov     eax, offset userSum
+    mDisplayString  eax
+
     ; Display sum
+    push    sum
+    call    WriteVal
 
 ;--------------------------------------------------------------
 ; E. Display to the user the rounded average.
 ;--------------------------------------------------------------
     ; Calculate average
+    push    lengthIntArray
+    push    sum
+    push    offset average
+    call    CalculateAverage
+
     ; Display prompt
+    mov     eax, offset userAverage
+    mDisplayString  eax
+
     ; Display average
+    push    average
+    call    WriteVal
 
 ;--------------------------------------------------------------
 ; F. Goodbye
@@ -300,13 +325,14 @@ _setUp:
 ;----------------------------------------------------------------------
 ; Validation Loop
 ;   The first time the loop iterates, it first checks if there is a neg
-;       or pos sign. 
-;       If there is a neg sign, the loop will deal with negating 
-;           the final output. If pos, jump to end of first loop.
-;       After this first iteration, only numbers are allowed...
+;       or pos sign. If there is a neg sign, the loop will deal with  
+;       negating the final output. 
+;   For both neg or pos, must skip aritmetic and jump to end of loop.
+;   After this first iteration, only numbers are allowed...
 ;       (i.e. _noSymbolsValidationLoop).
 ;   This loop includes validation - that the user inputted string is
 ;       indeed a number, and that it's within the correct SDWORD range.
+;   While validating, this loop is creating SDWORD from ASCII values.
 ;----------------------------------------------------------------------
 _validationLoop:
     LODSB
@@ -334,10 +360,10 @@ _firstValidationContinue:
     ;   3. Multiply eax by 10.
     ;       Check for any overflow, which is an instant jump to error.
     ;   4. Add value of tempHoldAl to eax
-    ;   5. store new numInt value in numInt (not finalized, and is crucial 
+    ;   5. Store new numInt value in numInt (not finalized, and is crucial 
     ;       to aritmethic as long as loop is in effect).
     ;-----------------------------------------------------------------------
-    sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value of the string num inputted
+    sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value 
     mov     ebx, [ebp+60]               ; 1
     mov     BYTE PTR [ebx], AL            
     mov     edx, [ebp+44]               ; 2
@@ -347,11 +373,12 @@ _firstValidationContinue:
     jo      _error
     add     eax, [ebx]                  ; 4
 
-    ;-----------------------------------------------------------------------
-    ; Before pushing final, result integer to numInt and exiting the loop 
-    ;   (when ecx = 0), it is important to check if the number is actually
-    ;   in SDWORD range. 
-    ;-----------------------------------------------------------------------
+    ;-------------------------------------------------------------------------
+    ; Before copying the final value to numInt and
+    ;   exiting the loop (when ecx = 0), it is important to check if 
+    ;   the number is actually in SDWORD range.
+    ;   This why we stop once ecx is still 1, and we have final numInt in eax.
+    ;--------------------------------------------------------------------------
     cmp     ecx, ONE
     je      _rangeCheck
 _continueValidationFromRangeCheck:
@@ -363,8 +390,10 @@ _continueValidationFromNegPosSign:
     ja      _noSymbolsValidationLoop
     
     ;-----------------------------------------------------------------------
-    ; Circles back to negate boolean set inside _negate label.
-    ;   If set (negate = 1), then must perform negation.
+    ; After exiting the validation loop:
+    ;   Circles back to negate boolean set inside _negate label.
+    ;   If set (negate = 1), then must perform negation of numInt.
+    ;   Else, procedure is finished.
     ;-----------------------------------------------------------------------
     mov     ebx, [ebp+52]
     cmp     DWORD PTR [ebx], ONE
@@ -373,8 +402,8 @@ _continueValidationFromNegPosSign:
 
 ;----------------------------------------------------------------------
 ; Error message
-;   Displays error message, clears slate of numInt and negate, in order
-;       to try a new loop for fetching valid user input.
+;   Displays error message, and clears the slate of both numInt and 
+;       negate, in order to get new attempt at valid user input.
 ;----------------------------------------------------------------------
 _error:
     mdisplayString      [ebp+56]
@@ -401,7 +430,8 @@ _negate:
     jmp     _continueValidationFromNegPosSign
 
 ;----------------------------------------------------------------------
-; Actually performs the negation required for a negative SDWORD.
+; After loop has run and numInt is valid but needs negation,
+;   this section actually performs the negation required for numInt.
 ;----------------------------------------------------------------------
 _performNegate:
     mov     ebx, [ebp+44]
@@ -411,13 +441,16 @@ _performNegate:
     jmp     _finish
 
 ;------------------------------------------------------------------------
-; Checking that final eax value generated from algorithm is within SDWORD 
+; Range Check
+;   Checking that final eax value generated from algorithm is within SDWORD 
 ;   range. Perform this check while still in algorithm loop (ecx = 1), but
 ;   at end of computation algorithm, before storing in numInt. 
 ;   Before checking range, must first check negate variable boolean 
 ;   to see which check to perform (either for a positive or negative number)
 ;       If true, jump to _checkRangeNegative.
 ;       If false, jump to _checkRangePositive.
+;   Once complete either jump to error or jump to finish out the
+;       validation loop.
 ;------------------------------------------------------------------------
 _RangeCheck:
     mov     ebx, [ebp+52]                   
@@ -474,6 +507,85 @@ _finish:
     pop     ebp
     RET     8
 WriteVal EndP
+
+;---------------------------------------------------------------------------------
+; Name: CalculateSum
+;
+; This procedure calculates the sum of an integer array.
+;
+; Preconditions: The array must be of TYPE SDWORD
+;
+; Postconditions: None
+;
+; Receives:
+;           [ebp+36]    =   value input parameter, lengthIntArray
+;           [ebp+32]    =   value input parameter, typeIntArray
+;           [ebp+28]    =   reference output parameter, sum
+;           [ebp+24]    =   reference input parameter, intArray
+;
+; Returns:
+;           [ebp+28]    =   reference output parameter, sum
+;-----------------------------------------------------------------------------------
+CalculateSum PROC USES ecx esi ebx edx
+    push    ebp
+    mov     ebp, esp
+
+    ;--------------------------------------------------------------
+    ; This loop calculates the sum of an SDWORD array.
+    ;--------------------------------------------------------------
+    ; set up for _summation
+    mov     ecx, [ebp+36]
+    mov     esi, [ebp+24]
+    mov     ebx, ZERO
+
+_summation:
+    add     ebx, [esi]
+
+    ; increment esi
+    add     esi, [ebp+32]
+    LOOP    _summation
+
+    mov     edx, [ebp+28]
+    mov     SDWORD PTR [edx], ebx
+
+    pop     ebp
+    RET     16
+CalculateSum EndP
+
+;---------------------------------------------------------------------------------
+; Name: CalculateAverage
+;
+; This procedure calculates the average of an integer array.
+;
+; Preconditions: The array must be of TYPE SDWORD.
+;
+; Postconditions: None
+;
+; Receives:
+;           [ebp+28]    =   value input parameter, lengthIntArray
+;           [ebp+24]    =   value input parameter, sum
+;           [ebp+20]    =   reference output parameter, average
+;
+; Returns:
+;           [ebp+20]    =   reference output parameter, average
+;-----------------------------------------------------------------------------------
+CalculateAverage PROC USES eax edx ebx
+    push    ebp
+    mov     ebp, esp
+
+    ; divide sum by length of array
+    mov     eax, [ebp+24]
+    mov     ebx, [ebp+28]
+    cdq
+    idiv    ebx
+
+    ; store result in average
+    mov     ebx, [ebp+20]
+    mov     SDWORD  PTR [ebx], eax
+
+    pop     ebp
+    RET     12
+CalculateAverage EndP
 
 ;-----------------------------------------------------------------------------
 ; Name: Goodbye

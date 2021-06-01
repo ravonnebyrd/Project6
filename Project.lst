@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 20:25:21
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Page 1 - 1
 
 
@@ -225,10 +225,13 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
  0000020E  0000000A [		    intArray                    SDWORD      TEN DUP(?)
 	    00000000
 	   ]
- 00000236 00000000		    sum                         SDWORD      ?
- 0000023A 00000000		    average                     SDWORD      ?
- 0000023E 2C 20 00		    comma                       BYTE        ", ",0
- 00000241  0000000B [		    newString                   BYTE        ELEVEN DUP(?)
+ 00000236 0000000A		    lengthIntArray              SDWORD       LENGTHOF intArray
+ 0000023A 00000004		    typeIntArray                SDWORD       TYPE intArray
+
+ 0000023E 00000000		    sum                         SDWORD      ?
+ 00000242 00000000		    average                     SDWORD      ?
+ 00000246 2C 20 00		    comma                       BYTE        ", ",0
+ 00000249  0000000B [		    newString                   BYTE        ELEVEN DUP(?)
 	    00
 	   ]
 
@@ -239,7 +242,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				;--------------------------------------------------------------
  00000000  68 00000000 R	    push    offset programTitle
  00000005  68 00000041 R	    push    offset programDescription
- 0000000A  E8 0000009D		    call    Introduction
+ 0000000A  E8 00000104		    call    Introduction
 
 				;--------------------------------------------------------------
 				; B. Retrieving user input
@@ -248,13 +251,11 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				    ; This loop gets ten valid signed integers from the user.
 				    ;   It will store these integers in the array, intArray.
 				    ;--------------------------------------------------------------
-
 				    ; set up for _getInputLoop
  0000000F  B9 0000000A		    mov     ecx, LENGTHOF intArray
  00000014  BE 0000020E R	    mov     esi, offset intArray
 
  00000019			_getInputLoop: 
-				    
  00000019  68 0000020A R	    push    offset tempHoldAL
  0000001E  68 00000117 R	    push    offset errorMessage
  00000023  68 00000206 R	    push    offset negate
@@ -264,7 +265,7 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
  00000037  68 000001C8 R	    push    offset userNum
  0000003C  FF 35 000001FA R	    push    maxCharUserNum
  00000042  68 000001FE R	    push    offset byteCount
- 00000047  E8 00000091		    call    ReadVal
+ 00000047  E8 000000F8		    call    ReadVal
 				    
 				    ; add current numInt into intArray, via ebx
  0000004C  8B 1D 00000202 R	    mov     ebx, numInt                 
@@ -273,65 +274,103 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				     ; clear numInt for next iteration
  00000054  C7 05 00000202 R	    mov     numInt, ZERO               
 	   00000000
- 0000005E  83 C6 04		    add     esi, TYPE intArray          
+ 0000005E  03 35 0000023A R	    add     esi, typeIntArray          
 
- 00000061  E2 B6		    LOOP    _getInputLoop
+ 00000064  E2 B3		    LOOP    _getInputLoop
 
 				;--------------------------------------------------------------
 				; C. Display to the user their list of ten valid integers.
 				;--------------------------------------------------------------
 				    ; Display Prompt
- 00000063  B8 0000015F R	    mov     eax, offset userEntered
+ 00000066  B8 0000015F R	    mov     eax, offset userEntered
 				    mDisplayString  eax
- 00000068  52		     1	    push    edx
- 00000069  8B D0	     1	    mov     edx, eax
- 0000006B  E8 00000000 E     1	    call    WriteString
- 00000070  5A		     1	    pop     edx
+ 0000006B  52		     1	    push    edx
+ 0000006C  8B D0	     1	    mov     edx, eax
+ 0000006E  E8 00000000 E     1	    call    WriteString
+ 00000073  5A		     1	    pop     edx
 
 				    ;--------------------------------------------------------------
 				    ; This loop displays the integers from intArray as ASCII  
 				    ;   strings, using the WriteVal procedure.
 				    ;--------------------------------------------------------------
+				    ; set up for _displayIntArrayASCII
+ 00000074  8B 0D 00000236 R	    mov     ecx, lengthIntArray
+ 0000007A  BE 0000020E R	    mov     esi, offset intArray
 
-				    ; set up for _getInputLoop
- 00000071  B9 0000000A		    mov     ecx, LENGTHOF intArray
- 00000076  BE 0000020E R	    mov     esi, offset intArray
+ 0000007F			_displayIntArrayASCII:
+				    ; put element (int) into eax
+ 0000007F  8B 06		    mov     eax, [esi]
 
- 0000007B			_displayIntArrayASCII:
- 0000007B  8B 06		    mov     eax, [esi]
+				    ; Write integer as ASCII
+ 00000081  68 00000249 R	    push    offset newString
+ 00000086  50			    push    eax
+ 00000087  E8 000001B3		    call    WriteVal
 
- 0000007D  68 00000241 R	    push    offset newString
- 00000082  50			    push    eax
- 00000083  E8 00000150		    call    WriteVal
-
- 00000088  B8 0000023E R	    mov     eax, offset comma
+				    ; Inserting comma after number
+ 0000008C  B8 00000246 R	    mov     eax, offset comma
 				    mDisplayString  eax
- 0000008D  52		     1	    push    edx
- 0000008E  8B D0	     1	    mov     edx, eax
- 00000090  E8 00000000 E     1	    call    WriteString
- 00000095  5A		     1	    pop     edx
+ 00000091  52		     1	    push    edx
+ 00000092  8B D0	     1	    mov     edx, eax
+ 00000094  E8 00000000 E     1	    call    WriteString
+ 00000099  5A		     1	    pop     edx
 
- 00000096  83 C6 04		    add     esi, TYPE intArray
- 00000099  E2 E0		    LOOP    _displayIntArrayASCII
+				    ; increment esi
+ 0000009A  83 C6 04		    add     esi, TYPE intArray
+ 0000009D  E2 E0		    LOOP    _displayIntArrayASCII
 
 				;--------------------------------------------------------------
 				; D. Display to the user the sum
 				;--------------------------------------------------------------
+				    ; Calculate sum
+ 0000009F  FF 35 00000236 R	    push    lengthIntArray
+ 000000A5  FF 35 0000023A R	    push    typeIntArray
+ 000000AB  68 0000023E R	    push    offset sum
+ 000000B0  68 0000020E R	    push    offset intArray
+ 000000B5  E8 0000018C		    call    CalculateSum
+
+				    ; Display prompt
+ 000000BA  B8 0000016D R	    mov     eax, offset userSum
+				    mDisplayString  eax
+ 000000BF  52		     1	    push    edx
+ 000000C0  8B D0	     1	    mov     edx, eax
+ 000000C2  E8 00000000 E     1	    call    WriteString
+ 000000C7  5A		     1	    pop     edx
+
+				    ; Display sum
+ 000000C8  FF 35 0000023E R	    push    sum
+ 000000CE  E8 0000016C		    call    WriteVal
 
 				;--------------------------------------------------------------
 				; E. Display to the user the rounded average.
 				;--------------------------------------------------------------
+				    ; Calculate average
+ 000000D3  FF 35 00000236 R	    push    lengthIntArray
+ 000000D9  FF 35 0000023E R	    push    sum
+ 000000DF  68 00000242 R	    push    offset average
+ 000000E4  E8 00000183		    call    CalculateAverage
+
+				    ; Display prompt
+ 000000E9  B8 00000179 R	    mov     eax, offset userAverage
+				    mDisplayString  eax
+ 000000EE  52		     1	    push    edx
+ 000000EF  8B D0	     1	    mov     edx, eax
+ 000000F1  E8 00000000 E     1	    call    WriteString
+ 000000F6  5A		     1	    pop     edx
+
+				    ; Display average
+ 000000F7  FF 35 00000242 R	    push    average
+ 000000FD  E8 0000013D		    call    WriteVal
 
 				;--------------------------------------------------------------
 				; F. Goodbye
 				;--------------------------------------------------------------
- 0000009B  68 00000189 R	    push    offset goodbyeMessage
- 000000A0  E8 0000013A		    call    Goodbye
+ 00000102  68 00000189 R	    push    offset goodbyeMessage
+ 00000107  E8 0000017B		    call    Goodbye
 
 				    Invoke ExitProcess,0	; exit to operating system
- 000000A5  6A 00	   *	    push   +000000000h
- 000000A7  E8 00000000 E   *	    call   ExitProcess
- 000000AC			main ENDP
+ 0000010C  6A 00	   *	    push   +000000000h
+ 0000010E  E8 00000000 E   *	    call   ExitProcess
+ 00000113			main ENDP
 
 				;---------------------------------------------------------------------------------
 				; Name: Introduction
@@ -349,30 +388,30 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				;
 				; Returns: None
 				;-----------------------------------------------------------------------------------
- 000000AC			Introduction PROC USES edx
- 000000AC  52		   *	    push   edx
- 000000AD  55			    push    ebp
- 000000AE  8B EC		    mov     ebp, esp
+ 00000113			Introduction PROC USES edx
+ 00000113  52		   *	    push   edx
+ 00000114  55			    push    ebp
+ 00000115  8B EC		    mov     ebp, esp
 
- 000000B0  E8 00000000 E	    call                CrLf
+ 00000117  E8 00000000 E	    call                CrLf
 				    mDisplayString      [ebp+16]
- 000000B5  52		     1	    push    edx
- 000000B6  8B 55 10	     1	    mov     edx, [ebp+16]
- 000000B9  E8 00000000 E     1	    call    WriteString
- 000000BE  5A		     1	    pop     edx
- 000000BF  E8 00000000 E	    call                CrLf
- 000000C4  E8 00000000 E	    call                CrLf
+ 0000011C  52		     1	    push    edx
+ 0000011D  8B 55 10	     1	    mov     edx, [ebp+16]
+ 00000120  E8 00000000 E     1	    call    WriteString
+ 00000125  5A		     1	    pop     edx
+ 00000126  E8 00000000 E	    call                CrLf
+ 0000012B  E8 00000000 E	    call                CrLf
 				    mDisplayString      [ebp+12]
- 000000C9  52		     1	    push    edx
- 000000CA  8B 55 0C	     1	    mov     edx, [ebp+12]
- 000000CD  E8 00000000 E     1	    call    WriteString
- 000000D2  5A		     1	    pop     edx
- 000000D3  E8 00000000 E	    call                CrLf
+ 00000130  52		     1	    push    edx
+ 00000131  8B 55 0C	     1	    mov     edx, [ebp+12]
+ 00000134  E8 00000000 E     1	    call    WriteString
+ 00000139  5A		     1	    pop     edx
+ 0000013A  E8 00000000 E	    call                CrLf
 
- 000000D8  5D			    pop     ebp
- 000000D9  5A		   *	    pop    edx
- 000000DA  C2 0008		    RET     8
- 000000DD			Introduction EndP
+ 0000013F  5D			    pop     ebp
+ 00000140  5A		   *	    pop    edx
+ 00000141  C2 0008		    RET     8
+ 00000144			Introduction EndP
 
 				;----------------------------------------------------------------------------------------------------
 				; Name: ReadVal
@@ -401,89 +440,90 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				; Returns:
 				;           [ebp+44]    =   reference output parameter, int to add to array of user inputted values
 				;-----------------------------------------------------------------------------------------------------
- 000000DD			ReadVal PROC USES eax ecx edx esi ebx
- 000000DD  50		   *	    push   eax
- 000000DE  51		   *	    push   ecx
- 000000DF  52		   *	    push   edx
- 000000E0  56		   *	    push   esi
- 000000E1  53		   *	    push   ebx
- 000000E2  55			    push    ebp
- 000000E3  8B EC		    mov     ebp, esp
+ 00000144			ReadVal PROC USES eax ecx edx esi ebx
+ 00000144  50		   *	    push   eax
+ 00000145  51		   *	    push   ecx
+ 00000146  52		   *	    push   edx
+ 00000147  56		   *	    push   esi
+ 00000148  53		   *	    push   ebx
+ 00000149  55			    push    ebp
+ 0000014A  8B EC		    mov     ebp, esp
 
- 000000E5			_firstTry:
+ 0000014C			_firstTry:
 				    mGetString      [ebp+40], [ebp+36], [ebp+32], [ebp+28]
- 000000E5  52		     1	    push    edx
- 000000E6  51		     1	    push    ecx
- 000000E7  50		     1	    push    eax
- 000000E8  52		     2	    push    edx
- 000000E9  8B 55 28	     2	    mov     edx, [ebp+40]
- 000000EC  E8 00000000 E     2	    call    WriteString
- 000000F1  5A		     2	    pop     edx
- 000000F2  8B 55 24	     1	    mov     edx, [ebp+36]
- 000000F5  8B 4D 20	     1	    mov     ecx, [ebp+32]
- 000000F8  E8 00000000 E     1	    call    ReadString
- 000000FD  89 45 1C	     1	    mov     DWORD PTR [[ebp+28]], eax
- 00000100  58		     1	    pop     eax
- 00000101  59		     1	    pop     ecx
- 00000102  5A		     1	    pop     edx
- 00000103  EB 1E		    jmp     _setUp
+ 0000014C  52		     1	    push    edx
+ 0000014D  51		     1	    push    ecx
+ 0000014E  50		     1	    push    eax
+ 0000014F  52		     2	    push    edx
+ 00000150  8B 55 28	     2	    mov     edx, [ebp+40]
+ 00000153  E8 00000000 E     2	    call    WriteString
+ 00000158  5A		     2	    pop     edx
+ 00000159  8B 55 24	     1	    mov     edx, [ebp+36]
+ 0000015C  8B 4D 20	     1	    mov     ecx, [ebp+32]
+ 0000015F  E8 00000000 E     1	    call    ReadString
+ 00000164  89 45 1C	     1	    mov     DWORD PTR [[ebp+28]], eax
+ 00000167  58		     1	    pop     eax
+ 00000168  59		     1	    pop     ecx
+ 00000169  5A		     1	    pop     edx
+ 0000016A  EB 1E		    jmp     _setUp
 
 				;----------------------------------------------------------------------
 				; Jump to _tryAgain instead of _firstTry after an error because _tryAgain 
 				;   will display the special error prompt for the user.
 				;----------------------------------------------------------------------
- 00000105			_tryAgain:
+ 0000016C			_tryAgain:
 				    mGetString      [ebp+48], [ebp+36], [ebp+32], [ebp+28]
- 00000105  52		     1	    push    edx
- 00000106  51		     1	    push    ecx
- 00000107  50		     1	    push    eax
- 00000108  52		     2	    push    edx
- 00000109  8B 55 30	     2	    mov     edx, [ebp+48]
- 0000010C  E8 00000000 E     2	    call    WriteString
- 00000111  5A		     2	    pop     edx
- 00000112  8B 55 24	     1	    mov     edx, [ebp+36]
- 00000115  8B 4D 20	     1	    mov     ecx, [ebp+32]
- 00000118  E8 00000000 E     1	    call    ReadString
- 0000011D  89 45 1C	     1	    mov     DWORD PTR [[ebp+28]], eax
- 00000120  58		     1	    pop     eax
- 00000121  59		     1	    pop     ecx
- 00000122  5A		     1	    pop     edx
+ 0000016C  52		     1	    push    edx
+ 0000016D  51		     1	    push    ecx
+ 0000016E  50		     1	    push    eax
+ 0000016F  52		     2	    push    edx
+ 00000170  8B 55 30	     2	    mov     edx, [ebp+48]
+ 00000173  E8 00000000 E     2	    call    WriteString
+ 00000178  5A		     2	    pop     edx
+ 00000179  8B 55 24	     1	    mov     edx, [ebp+36]
+ 0000017C  8B 4D 20	     1	    mov     ecx, [ebp+32]
+ 0000017F  E8 00000000 E     1	    call    ReadString
+ 00000184  89 45 1C	     1	    mov     DWORD PTR [[ebp+28]], eax
+ 00000187  58		     1	    pop     eax
+ 00000188  59		     1	    pop     ecx
+ 00000189  5A		     1	    pop     edx
 
 				;----------------------------------------------------------------------
 				; Setting Up the Validation Loop
 				;   Moving esi to point to the user entered string [ebp+36]
 				;   Moving ecx to equal the actual amount bytes in the user string. 
 				;----------------------------------------------------------------------
- 00000123			_setUp:
- 00000123  8B 75 24		    mov     esi, [ebp+36]
- 00000126  8B 4D 1C		    mov     ecx, [ebp+28]               
+ 0000018A			_setUp:
+ 0000018A  8B 75 24		    mov     esi, [ebp+36]
+ 0000018D  8B 4D 1C		    mov     ecx, [ebp+28]               
 
 				;----------------------------------------------------------------------
 				; Validation Loop
 				;   The first time the loop iterates, it first checks if there is a neg
-				;       or pos sign. 
-				;       If there is a neg sign, the loop will deal with negating 
-				;           the final output. If pos, jump to end of first loop.
-				;       After this first iteration, only numbers are allowed...
+				;       or pos sign. If there is a neg sign, the loop will deal with  
+				;       negating the final output. 
+				;   For both neg or pos, must skip aritmetic and jump to end of loop.
+				;   After this first iteration, only numbers are allowed...
 				;       (i.e. _noSymbolsValidationLoop).
 				;   This loop includes validation - that the user inputted string is
 				;       indeed a number, and that it's within the correct SDWORD range.
+				;   While validating, this loop is creating SDWORD from ASCII values.
 				;----------------------------------------------------------------------
- 00000129			_validationLoop:
- 00000129  AC			    LODSB
- 0000012A  3C 2D		    cmp     AL, NEG_SIGN
- 0000012C  74 63		    je      _negate
- 0000012E  3C 2B		    cmp     AL, POS_SIGN
- 00000130  74 2C		    je      _continueValidationFromNegPosSign
- 00000132  EB 01		    jmp     _firstValidationContinue
+ 00000190			_validationLoop:
+ 00000190  AC			    LODSB
+ 00000191  3C 2D		    cmp     AL, NEG_SIGN
+ 00000193  74 63		    je      _negate
+ 00000195  3C 2B		    cmp     AL, POS_SIGN
+ 00000197  74 2C		    je      _continueValidationFromNegPosSign
+ 00000199  EB 01		    jmp     _firstValidationContinue
 
- 00000134			_noSymbolsValidationLoop:
- 00000134  AC			    LODSB
- 00000135			_firstValidationContinue:
- 00000135  3C 30		    cmp     AL, LO_ASCII_DEC_NUM
- 00000137  72 35		    jb      _error
- 00000139  3C 39		    cmp     AL, HI_ASCII_DEC_NUM
- 0000013B  77 31		    ja      _error
+ 0000019B			_noSymbolsValidationLoop:
+ 0000019B  AC			    LODSB
+ 0000019C			_firstValidationContinue:
+ 0000019C  3C 30		    cmp     AL, LO_ASCII_DEC_NUM
+ 0000019E  72 35		    jb      _error
+ 000001A0  3C 39		    cmp     AL, HI_ASCII_DEC_NUM
+ 000001A2  77 31		    ja      _error
 
 				    ;----------------------------------------------------------------------
 				    ; Main aritmethic of alogrithm 
@@ -495,126 +535,133 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				    ;   3. Multiply eax by 10.
 				    ;       Check for any overflow, which is an instant jump to error.
 				    ;   4. Add value of tempHoldAl to eax
-				    ;   5. store new numInt value in numInt (not finalized, and is crucial 
+				    ;   5. Store new numInt value in numInt (not finalized, and is crucial 
 				    ;       to aritmethic as long as loop is in effect).
 				    ;-----------------------------------------------------------------------
- 0000013D  2C 30		    sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value of the string num inputted
- 0000013F  8B 5D 3C		    mov     ebx, [ebp+60]               ; 1
- 00000142  88 03		    mov     BYTE PTR [ebx], AL            
- 00000144  8B 55 2C		    mov     edx, [ebp+44]               ; 2
- 00000147  8B 02		    mov     eax, [edx]                   
- 00000149  BA 0000000A		    mov     edx, TEN
- 0000014E  F7 EA		    imul    edx                         ; 3
- 00000150  70 1C		    jo      _error
- 00000152  03 03		    add     eax, [ebx]                  ; 4
+ 000001A4  2C 30		    sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value 
+ 000001A6  8B 5D 3C		    mov     ebx, [ebp+60]               ; 1
+ 000001A9  88 03		    mov     BYTE PTR [ebx], AL            
+ 000001AB  8B 55 2C		    mov     edx, [ebp+44]               ; 2
+ 000001AE  8B 02		    mov     eax, [edx]                   
+ 000001B0  BA 0000000A		    mov     edx, TEN
+ 000001B5  F7 EA		    imul    edx                         ; 3
+ 000001B7  70 1C		    jo      _error
+ 000001B9  03 03		    add     eax, [ebx]                  ; 4
 
-				    ;-----------------------------------------------------------------------
-				    ; Before pushing final, result integer to numInt and exiting the loop 
-				    ;   (when ecx = 0), it is important to check if the number is actually
-				    ;   in SDWORD range. 
-				    ;-----------------------------------------------------------------------
- 00000154  83 F9 01		    cmp     ecx, ONE
- 00000157  74 4E		    je      _rangeCheck
- 00000159			_continueValidationFromRangeCheck:
- 00000159  8B 5D 2C		    mov     ebx, [ebp+44]               
- 0000015C  89 03		    mov     DWORD PTR [ebx], eax        ; 5
- 0000015E			_continueValidationFromNegPosSign:
- 0000015E  49			    dec     ecx
- 0000015F  83 F9 00		    cmp     ecx, ZERO
- 00000162  77 D0		    ja      _noSymbolsValidationLoop
+				    ;-------------------------------------------------------------------------
+				    ; Before copying the final value to numInt and
+				    ;   exiting the loop (when ecx = 0), it is important to check if 
+				    ;   the number is actually in SDWORD range.
+				    ;   This why we stop once ecx is still 1, and we have final numInt in eax.
+				    ;--------------------------------------------------------------------------
+ 000001BB  83 F9 01		    cmp     ecx, ONE
+ 000001BE  74 4E		    je      _rangeCheck
+ 000001C0			_continueValidationFromRangeCheck:
+ 000001C0  8B 5D 2C		    mov     ebx, [ebp+44]               
+ 000001C3  89 03		    mov     DWORD PTR [ebx], eax        ; 5
+ 000001C5			_continueValidationFromNegPosSign:
+ 000001C5  49			    dec     ecx
+ 000001C6  83 F9 00		    cmp     ecx, ZERO
+ 000001C9  77 D0		    ja      _noSymbolsValidationLoop
 				    
 				    ;-----------------------------------------------------------------------
-				    ; Circles back to negate boolean set inside _negate label.
-				    ;   If set (negate = 1), then must perform negation.
+				    ; After exiting the validation loop:
+				    ;   Circles back to negate boolean set inside _negate label.
+				    ;   If set (negate = 1), then must perform negation of numInt.
+				    ;   Else, procedure is finished.
 				    ;-----------------------------------------------------------------------
- 00000164  8B 5D 34		    mov     ebx, [ebp+52]
- 00000167  83 3B 01		    cmp     DWORD PTR [ebx], ONE
- 0000016A  74 30		    je      _performNegate
- 0000016C  EB 57		    jmp     _finish
+ 000001CB  8B 5D 34		    mov     ebx, [ebp+52]
+ 000001CE  83 3B 01		    cmp     DWORD PTR [ebx], ONE
+ 000001D1  74 30		    je      _performNegate
+ 000001D3  EB 57		    jmp     _finish
 
 				;----------------------------------------------------------------------
 				; Error message
-				;   Displays error message, clears slate of numInt and negate, in order
-				;       to try a new loop for fetching valid user input.
+				;   Displays error message, and clears the slate of both numInt and 
+				;       negate, in order to get new attempt at valid user input.
 				;----------------------------------------------------------------------
- 0000016E			_error:
+ 000001D5			_error:
 				    mdisplayString      [ebp+56]
- 0000016E  52		     1	    push    edx
- 0000016F  8B 55 38	     1	    mov     edx, [ebp+56]
- 00000172  E8 00000000 E     1	    call    WriteString
- 00000177  5A		     1	    pop     edx
+ 000001D5  52		     1	    push    edx
+ 000001D6  8B 55 38	     1	    mov     edx, [ebp+56]
+ 000001D9  E8 00000000 E     1	    call    WriteString
+ 000001DE  5A		     1	    pop     edx
 
 				    ; clear numInt
- 00000178  8B 55 2C		    mov     edx, [ebp+44]                       
- 0000017B  BB 00000000		    mov     ebx, ZERO
- 00000180  89 1A		    mov     DWORD PTR [edx], ebx
+ 000001DF  8B 55 2C		    mov     edx, [ebp+44]                       
+ 000001E2  BB 00000000		    mov     ebx, ZERO
+ 000001E7  89 1A		    mov     DWORD PTR [edx], ebx
 				    
 				    ; clear negate
- 00000182  8B 55 34		    mov     edx, [ebp+52]                       
- 00000185  BB 00000000		    mov     ebx, ZERO
- 0000018A  89 1A		    mov     DWORD PTR [edx], ebx
+ 000001E9  8B 55 34		    mov     edx, [ebp+52]                       
+ 000001EC  BB 00000000		    mov     ebx, ZERO
+ 000001F1  89 1A		    mov     DWORD PTR [edx], ebx
 
- 0000018C  E9 FFFFFF74		    jmp     _tryAgain
+ 000001F3  E9 FFFFFF74		    jmp     _tryAgain
 
 				;----------------------------------------------------------------------
 				; If the value held in AL equals a dash (45d or 2dh), then must update
 				;   the negation variable boolean. 
 				;----------------------------------------------------------------------
- 00000191			_negate:
- 00000191  8B 5D 34		    mov     ebx, [ebp+52]
- 00000194  C7 03 00000001	    mov     DWORD PTR [ebx], ONE
- 0000019A  EB C2		    jmp     _continueValidationFromNegPosSign
+ 000001F8			_negate:
+ 000001F8  8B 5D 34		    mov     ebx, [ebp+52]
+ 000001FB  C7 03 00000001	    mov     DWORD PTR [ebx], ONE
+ 00000201  EB C2		    jmp     _continueValidationFromNegPosSign
 
 				;----------------------------------------------------------------------
-				; Actually performs the negation required for a negative SDWORD.
+				; After loop has run and numInt is valid but needs negation,
+				;   this section actually performs the negation required for numInt.
 				;----------------------------------------------------------------------
- 0000019C			_performNegate:
- 0000019C  8B 5D 2C		    mov     ebx, [ebp+44]
- 0000019F  8B 13		    mov     edx, [ebx]
- 000001A1  F7 DA		    neg     edx
- 000001A3  89 13		    mov     SDWORD PTR [ebx], edx
- 000001A5  EB 1E		    jmp     _finish
+ 00000203			_performNegate:
+ 00000203  8B 5D 2C		    mov     ebx, [ebp+44]
+ 00000206  8B 13		    mov     edx, [ebx]
+ 00000208  F7 DA		    neg     edx
+ 0000020A  89 13		    mov     SDWORD PTR [ebx], edx
+ 0000020C  EB 1E		    jmp     _finish
 
 				;------------------------------------------------------------------------
-				; Checking that final eax value generated from algorithm is within SDWORD 
+				; Range Check
+				;   Checking that final eax value generated from algorithm is within SDWORD 
 				;   range. Perform this check while still in algorithm loop (ecx = 1), but
 				;   at end of computation algorithm, before storing in numInt. 
 				;   Before checking range, must first check negate variable boolean 
 				;   to see which check to perform (either for a positive or negative number)
 				;       If true, jump to _checkRangeNegative.
 				;       If false, jump to _checkRangePositive.
+				;   Once complete either jump to error or jump to finish out the
+				;       validation loop.
 				;------------------------------------------------------------------------
- 000001A7			_RangeCheck:
- 000001A7  8B 5D 34		    mov     ebx, [ebp+52]                   
- 000001AA  8B 1B		    mov     ebx, [ebx]
- 000001AC  83 FB 01		    cmp     ebx, ONE
- 000001AF  74 02		    je      _checkRangeNegative
- 000001B1  EB 09		    jmp     _checkRangePositive
+ 0000020E			_RangeCheck:
+ 0000020E  8B 5D 34		    mov     ebx, [ebp+52]                   
+ 00000211  8B 1B		    mov     ebx, [ebx]
+ 00000213  83 FB 01		    cmp     ebx, ONE
+ 00000216  74 02		    je      _checkRangeNegative
+ 00000218  EB 09		    jmp     _checkRangePositive
 
- 000001B3			_checkRangeNegative:
- 000001B3  3D 80000000		    cmp     eax, LO_INT_SDWORD
- 000001B8  77 B4		    ja      _error
- 000001BA  EB 9D		    jmp     _continueValidationFromRangeCheck
+ 0000021A			_checkRangeNegative:
+ 0000021A  3D 80000000		    cmp     eax, LO_INT_SDWORD
+ 0000021F  77 B4		    ja      _error
+ 00000221  EB 9D		    jmp     _continueValidationFromRangeCheck
 
- 000001BC			_checkRangePositive:
- 000001BC  3D 7FFFFFFF		    cmp     eax, HI_INT_SDWORD
- 000001C1  77 AB		    ja      _error
- 000001C3  EB 94		    jmp     _continueValidationFromRangeCheck
+ 00000223			_checkRangePositive:
+ 00000223  3D 7FFFFFFF		    cmp     eax, HI_INT_SDWORD
+ 00000228  77 AB		    ja      _error
+ 0000022A  EB 94		    jmp     _continueValidationFromRangeCheck
 
- 000001C5			_finish:
+ 0000022C			_finish:
 				    ; clear negate
- 000001C5  8B 55 34		    mov     edx, [ebp+52]                       
- 000001C8  BB 00000000		    mov     ebx, ZERO
- 000001CD  89 1A		    mov     DWORD PTR [edx], ebx
+ 0000022C  8B 55 34		    mov     edx, [ebp+52]                       
+ 0000022F  BB 00000000		    mov     ebx, ZERO
+ 00000234  89 1A		    mov     DWORD PTR [edx], ebx
 
- 000001CF  5D			    pop     ebp
- 000001D0  5B		   *	    pop    ebx
- 000001D1  5E		   *	    pop    esi
- 000001D2  5A		   *	    pop    edx
- 000001D3  59		   *	    pop    ecx
- 000001D4  58		   *	    pop    eax
- 000001D5  C2 0024		    RET     36
- 000001D8			ReadVal EndP
+ 00000236  5D			    pop     ebp
+ 00000237  5B		   *	    pop    ebx
+ 00000238  5E		   *	    pop    esi
+ 00000239  5A		   *	    pop    edx
+ 0000023A  59		   *	    pop    ecx
+ 0000023B  58		   *	    pop    eax
+ 0000023C  C2 0024		    RET     36
+ 0000023F			ReadVal EndP
 
 				;--------------------------------------------------------------------------------
 				; Name: WriteVal
@@ -628,22 +675,115 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				; Postconditions: None
 				;
 				; Receives:
-				;           [ebp+12]    =   reference output parameter, ASCII string
+				;           [ebp+12]   =   reference output parameter, ASCII string
 				;           [ebp+8]    =   value input parameter, the SDWORD value to be converted
 				;
 				; Returns: None
 				;---------------------------------------------------------------------------------
- 000001D8			WriteVal PROC
- 000001D8  55			    push    ebp
- 000001D9  8B EC		    mov     ebp, esp
+ 0000023F			WriteVal PROC
+ 0000023F  55			    push    ebp
+ 00000240  8B EC		    mov     ebp, esp
 
 
 				    ; Use AL and STOSB to clear newString [ebp+12]
 				    
- 000001DB			_finish:
- 000001DB  5D			    pop     ebp
- 000001DC  C2 0008		    RET     8
- 000001DF			WriteVal EndP
+ 00000242			_finish:
+ 00000242  5D			    pop     ebp
+ 00000243  C2 0008		    RET     8
+ 00000246			WriteVal EndP
+
+				;---------------------------------------------------------------------------------
+				; Name: CalculateSum
+				;
+				; This procedure calculates the sum of an integer array.
+				;
+				; Preconditions: The array must be of TYPE SDWORD
+				;
+				; Postconditions: None
+				;
+				; Receives:
+				;           [ebp+36]    =   value input parameter, lengthIntArray
+				;           [ebp+32]    =   value input parameter, typeIntArray
+				;           [ebp+28]    =   reference output parameter, sum
+				;           [ebp+24]    =   reference input parameter, intArray
+				;
+				; Returns:
+				;           [ebp+28]    =   reference output parameter, sum
+				;-----------------------------------------------------------------------------------
+ 00000246			CalculateSum PROC USES ecx esi ebx edx
+ 00000246  51		   *	    push   ecx
+ 00000247  56		   *	    push   esi
+ 00000248  53		   *	    push   ebx
+ 00000249  52		   *	    push   edx
+ 0000024A  55			    push    ebp
+ 0000024B  8B EC		    mov     ebp, esp
+
+				    ;--------------------------------------------------------------
+				    ; This loop calculates the sum of an SDWORD array.
+				    ;--------------------------------------------------------------
+				    ; set up for _summation
+ 0000024D  8B 4D 24		    mov     ecx, [ebp+36]
+ 00000250  8B 75 18		    mov     esi, [ebp+24]
+ 00000253  BB 00000000		    mov     ebx, ZERO
+
+ 00000258			_summation:
+ 00000258  03 1E		    add     ebx, [esi]
+
+				    ; increment esi
+ 0000025A  03 75 20		    add     esi, [ebp+32]
+ 0000025D  E2 F9		    LOOP    _summation
+
+ 0000025F  8B 55 1C		    mov     edx, [ebp+28]
+ 00000262  89 1A		    mov     SDWORD PTR [edx], ebx
+
+ 00000264  5D			    pop     ebp
+ 00000265  5A		   *	    pop    edx
+ 00000266  5B		   *	    pop    ebx
+ 00000267  5E		   *	    pop    esi
+ 00000268  59		   *	    pop    ecx
+ 00000269  C2 0010		    RET     16
+ 0000026C			CalculateSum EndP
+
+				;---------------------------------------------------------------------------------
+				; Name: CalculateAverage
+				;
+				; This procedure calculates the average of an integer array.
+				;
+				; Preconditions: The array must be of TYPE SDWORD.
+				;
+				; Postconditions: None
+				;
+				; Receives:
+				;           [ebp+28]    =   value input parameter, lengthIntArray
+				;           [ebp+24]    =   value input parameter, sum
+				;           [ebp+20]    =   reference output parameter, average
+				;
+				; Returns:
+				;           [ebp+20]    =   reference output parameter, average
+				;-----------------------------------------------------------------------------------
+ 0000026C			CalculateAverage PROC USES eax edx ebx
+ 0000026C  50		   *	    push   eax
+ 0000026D  52		   *	    push   edx
+ 0000026E  53		   *	    push   ebx
+ 0000026F  55			    push    ebp
+ 00000270  8B EC		    mov     ebp, esp
+
+				    ; divide sum by length of array
+ 00000272  8B 45 18		    mov     eax, [ebp+24]
+ 00000275  8B 5D 1C		    mov     ebx, [ebp+28]
+ 00000278  99			    cdq
+ 00000279  F7 FB		    idiv    ebx
+
+				    ; store result in average
+ 0000027B  8B 5D 14		    mov     ebx, [ebp+20]
+ 0000027E  89 03		    mov     SDWORD  PTR [ebx], eax
+
+ 00000280  5D			    pop     ebp
+ 00000281  5B		   *	    pop    ebx
+ 00000282  5A		   *	    pop    edx
+ 00000283  58		   *	    pop    eax
+ 00000284  C2 000C		    RET     12
+ 00000287			CalculateAverage EndP
 
 				;-----------------------------------------------------------------------------
 				; Name: Goodbye
@@ -659,25 +799,25 @@ Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
 				;
 				; Returns: None
 				;------------------------------------------------------------------------------
- 000001DF			Goodbye PROC USES edx
- 000001DF  52		   *	    push   edx
- 000001E0  55			    push    ebp
- 000001E1  8B EC		    mov     ebp, esp
+ 00000287			Goodbye PROC USES edx
+ 00000287  52		   *	    push   edx
+ 00000288  55			    push    ebp
+ 00000289  8B EC		    mov     ebp, esp
 
 				    mDisplayString      [ebp+12]
- 000001E3  52		     1	    push    edx
- 000001E4  8B 55 0C	     1	    mov     edx, [ebp+12]
- 000001E7  E8 00000000 E     1	    call    WriteString
- 000001EC  5A		     1	    pop     edx
+ 0000028B  52		     1	    push    edx
+ 0000028C  8B 55 0C	     1	    mov     edx, [ebp+12]
+ 0000028F  E8 00000000 E     1	    call    WriteString
+ 00000294  5A		     1	    pop     edx
 
- 000001ED  5D			    pop     ebp
+ 00000295  5D			    pop     ebp
 				    RET
- 000001EE  5A		   *	    pop    edx
- 000001EF  C3		   *	    ret    00000h
- 000001F0			Goodbye EndP
+ 00000296  5A		   *	    pop    edx
+ 00000297  C3		   *	    ret    00000h
+ 00000298			Goodbye EndP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 16:30:20
+Microsoft (R) Macro Assembler Version 14.28.29913.0	    05/31/21 20:25:21
 0String Primitives & MACROs     (Proj6_byrdr.asm	     Symbols 2 - 1
 
 
@@ -779,14 +919,17 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 0000024C Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000001F0 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000254 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000298 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
 
                 N a m e                 Type     Value    Attr
 
+CalculateAverage . . . . . . . .	P Near	 0000026C _TEXT	Length= 0000001B Public STDCALL
+CalculateSum . . . . . . . . . .	P Near	 00000246 _TEXT	Length= 00000026 Public STDCALL
+  _summation . . . . . . . . . .	L Near	 00000258 _TEXT	
 CloseFile  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 CloseHandle  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Clrscr . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -820,14 +963,14 @@ GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTextColor . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTickCount . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Goodbye  . . . . . . . . . . . .	P Near	 000001DF _TEXT	Length= 00000011 Public STDCALL
+Goodbye  . . . . . . . . . . . .	P Near	 00000287 _TEXT	Length= 00000011 Public STDCALL
 Gotoxy . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapAlloc  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Introduction . . . . . . . . . .	P Near	 000000AC _TEXT	Length= 00000031 Public STDCALL
+Introduction . . . . . . . . . .	P Near	 00000113 _TEXT	Length= 00000031 Public STDCALL
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -852,22 +995,22 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-ReadVal  . . . . . . . . . . . .	P Near	 000000DD _TEXT	Length= 000000FB Public STDCALL
-  _firstTry  . . . . . . . . . .	L Near	 000000E5 _TEXT	
-  _tryAgain  . . . . . . . . . .	L Near	 00000105 _TEXT	
-  _setUp . . . . . . . . . . . .	L Near	 00000123 _TEXT	
-  _validationLoop  . . . . . . .	L Near	 00000129 _TEXT	
-  _noSymbolsValidationLoop . . .	L Near	 00000134 _TEXT	
-  _firstValidationContinue . . .	L Near	 00000135 _TEXT	
-  _continueValidationFromRangeCheck 	L Near	 00000159 _TEXT	
-  _continueValidationFromNegPosSign 	L Near	 0000015E _TEXT	
-  _error . . . . . . . . . . . .	L Near	 0000016E _TEXT	
-  _negate  . . . . . . . . . . .	L Near	 00000191 _TEXT	
-  _performNegate . . . . . . . .	L Near	 0000019C _TEXT	
-  _RangeCheck  . . . . . . . . .	L Near	 000001A7 _TEXT	
-  _checkRangeNegative  . . . . .	L Near	 000001B3 _TEXT	
-  _checkRangePositive  . . . . .	L Near	 000001BC _TEXT	
-  _finish  . . . . . . . . . . .	L Near	 000001C5 _TEXT	
+ReadVal  . . . . . . . . . . . .	P Near	 00000144 _TEXT	Length= 000000FB Public STDCALL
+  _firstTry  . . . . . . . . . .	L Near	 0000014C _TEXT	
+  _tryAgain  . . . . . . . . . .	L Near	 0000016C _TEXT	
+  _setUp . . . . . . . . . . . .	L Near	 0000018A _TEXT	
+  _validationLoop  . . . . . . .	L Near	 00000190 _TEXT	
+  _noSymbolsValidationLoop . . .	L Near	 0000019B _TEXT	
+  _firstValidationContinue . . .	L Near	 0000019C _TEXT	
+  _continueValidationFromRangeCheck 	L Near	 000001C0 _TEXT	
+  _continueValidationFromNegPosSign 	L Near	 000001C5 _TEXT	
+  _error . . . . . . . . . . . .	L Near	 000001D5 _TEXT	
+  _negate  . . . . . . . . . . .	L Near	 000001F8 _TEXT	
+  _performNegate . . . . . . . .	L Near	 00000203 _TEXT	
+  _RangeCheck  . . . . . . . . .	L Near	 0000020E _TEXT	
+  _checkRangeNegative  . . . . .	L Near	 0000021A _TEXT	
+  _checkRangePositive  . . . . .	L Near	 00000223 _TEXT	
+  _finish  . . . . . . . . . . .	L Near	 0000022C _TEXT	
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -904,12 +1047,12 @@ WriteStackFrameName  . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-WriteVal . . . . . . . . . . . .	P Near	 000001D8 _TEXT	Length= 00000007 Public STDCALL
-  _finish  . . . . . . . . . . .	L Near	 000001DB _TEXT	
+WriteVal . . . . . . . . . . . .	P Near	 0000023F _TEXT	Length= 00000007 Public STDCALL
+  _finish  . . . . . . . . . . .	L Near	 00000242 _TEXT	
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000000AC Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000113 Public STDCALL
   _getInputLoop  . . . . . . . .	L Near	 00000019 _TEXT	
-  _displayIntArrayASCII  . . . .	L Near	 0000007B _TEXT	
+  _displayIntArrayASCII  . . . .	L Near	 0000007F _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -1140,12 +1283,12 @@ WINDOW_BUFFER_SIZE_EVENT . . . .	Number	 00000004h
 WriteConsoleOutputCharacter  . .	Text   	 WriteConsoleOutputCharacterA
 WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 ZERO . . . . . . . . . . . . . .	Number	 00000000h   
-average  . . . . . . . . . . . .	DWord	 0000023A _DATA	
+average  . . . . . . . . . . . .	DWord	 00000242 _DATA	
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
 byteCount  . . . . . . . . . . .	DWord	 000001FE _DATA	
-comma  . . . . . . . . . . . . .	Byte	 0000023E _DATA	
+comma  . . . . . . . . . . . . .	Byte	 00000246 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 errorMessage . . . . . . . . . .	Byte	 00000117 _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
@@ -1153,6 +1296,7 @@ goodbyeMessage . . . . . . . . .	Byte	 00000189 _DATA
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
 intArray . . . . . . . . . . . .	DWord	 0000020E _DATA	
+lengthIntArray . . . . . . . . .	DWord	 00000236 _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
 lightCyan  . . . . . . . . . . .	Number	 0000000Bh   
 lightGray  . . . . . . . . . . .	Number	 00000007h   
@@ -1162,14 +1306,15 @@ lightRed . . . . . . . . . . . .	Number	 0000000Ch
 magenta  . . . . . . . . . . . .	Number	 00000005h   
 maxCharUserNum . . . . . . . . .	DWord	 000001FA _DATA	
 negate . . . . . . . . . . . . .	DWord	 00000206 _DATA	
-newString  . . . . . . . . . . .	Byte	 00000241 _DATA	
+newString  . . . . . . . . . . .	Byte	 00000249 _DATA	
 numInt . . . . . . . . . . . . .	DWord	 00000202 _DATA	
 programDescription . . . . . . .	Byte	 00000041 _DATA	
 programTitle . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
 secondUserPrompt . . . . . . . .	Byte	 0000010B _DATA	
-sum  . . . . . . . . . . . . . .	DWord	 00000236 _DATA	
+sum  . . . . . . . . . . . . . .	DWord	 0000023E _DATA	
 tempHoldAL . . . . . . . . . . .	DWord	 0000020A _DATA	
+typeIntArray . . . . . . . . . .	DWord	 0000023A _DATA	
 userAverage  . . . . . . . . . .	Byte	 00000179 _DATA	
 userEntered  . . . . . . . . . .	Byte	 0000015F _DATA	
 userNum  . . . . . . . . . . . .	Byte	 000001C8 _DATA	
