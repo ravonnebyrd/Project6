@@ -1,11 +1,13 @@
 TITLE String Primitives & MACROs     (Proj6_byrdr.asm)
 
 ; Author: Ravonne Byrd
-; Last Modified: May 28, 2021
+; Last Modified: June 4, 2021
 ; OSU email address: byrdr@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number:  6               Due Date: June 6, 2021
-; Description: TODO
+; Description: This program uses asks a user to input a10 valid, in range values, as strings. This program will then
+;              convert those strings to actual integers. Yet it will display back the 10 numbers, their sum, and truncated average
+;              back to the user as strings again. This program utilizes string primitives and macros to do this work. 
 
 INCLUDE Irvine32.inc
 
@@ -86,10 +88,8 @@ ZERO                =   0
 ONE                 =   1
 NINE                =   9
 TEN                 =   10
-ELEVEN              =   11
 FIFTEEN             =   15
 FORTY_EIGHT         =   48
-FIFTY               =   50
 
 .data
     ; string array variables
@@ -99,14 +99,14 @@ FIFTY               =   50
                                             "Please enter no more than 10 characters, or 11 if using a leading sign (+ or -). ",13,10,0
     userPrompt                  BYTE        "Please enter your integer: ",0
     secondUserPrompt            BYTE        "Try again: ",0
-    errorMessage                BYTE        "Are you sure that was an integer? Maybe it was too large for 32-bits.",13,10,0
+    errorMessage                BYTE        "ERROR: Are you sure that was an integer? Or maybe it was too large for 32-bits.",13,10,0
     userEntered                 BYTE        "You entered: ",0
     userSum                     BYTE        "Their sum: ",0
     userAverage                 BYTE        "Their average: ",0
     goodbyeMessage              BYTE        "Thank you for your participation, and please enjoy your day.",13,10,0
 
     ; variables for user input
-    userNum                     BYTE        FIFTEEN DUP(?)            ; user input buffer
+    userNum                     BYTE        FIFTEEN DUP(?)          ; user input buffer
     maxCharUserNum              DWORD       SIZEOF userNum          ; max size of userNum
     byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
 
@@ -298,7 +298,7 @@ Introduction EndP
 ; Name: ReadVal
 ;
 ; This procedure uses mGetString to prompt the user for a number, which is stored in memory as
-;   a string. It then uses an algorithm to check that the number th user has inputted is indeed a
+;   a string. It then uses an algorithm to check that the number the user has inputted is indeed a
 ;   number, and validates that it is within range. The procedure returns the string as a signed integer.
 ;
 ; Preconditions: Uses and restores eax ecx edx esi ebx
@@ -543,8 +543,8 @@ WriteVal PROC USES eax edx ebx ecx edi esi
 ;   Negative SDWORDS handled separately since with IDIV,
 ;       the remainder keep the sign of the dividend 
 ;       (which could cause problems when adding 48).
-;   Both loos begin by adding the null terminator first.
-;-------------------------------------------------------
+;   Both loops begin by adding the null terminator first.
+;--------------------------------------------------------
     ; set up edi to point to empty array
     mov     edi, [ebp+36]
 _startConversionToPositiveASCII:
@@ -630,7 +630,7 @@ _followingConversionLoopsNeg:
     mov     DWORD PTR [ecx], edx
 
     ;--------------------------------------------
-    ; Once ecx is zero, can exit loop
+    ; Once eax is zero, can exit loop
     ;--------------------------------------------
     cmp     eax, ZERO
     jne     _followingConversionLoopsNeg
