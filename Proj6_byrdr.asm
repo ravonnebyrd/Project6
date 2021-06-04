@@ -350,7 +350,7 @@ _setUp:
 ;   The first time the loop iterates, it first checks if there is a neg
 ;       or pos sign. If there is a neg sign, the loop will deal with  
 ;       negating the final output. 
-;   For both neg or pos, must skip aritmetic and jump to end of loop.
+;   For both neg or pos, must skip arithmetic and jump to end of loop.
 ;   After this first iteration, only numbers are allowed...
 ;       (i.e. _noSymbolsContinueConversion).
 ;   This loop includes validation - that the user inputted string is
