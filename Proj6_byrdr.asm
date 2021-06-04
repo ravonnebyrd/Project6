@@ -374,7 +374,7 @@ _firstPassContinue:
     ja      _error
 
     ;----------------------------------------------------------------------
-    ; Main aritmethic of alogrithm 
+    ; Main arithmetic of algorithm 
     ;   Converts a string into it's SDWORD integer representation.
     ;   1. First, store offset of tempHoldAl in ebx, then store current
     ;       value of AL in tempHoldAL, since we need eax for multiplication.
@@ -384,7 +384,7 @@ _firstPassContinue:
     ;       Check for any overflow, which is an instant jump to error.
     ;   4. Add value of tempHoldAl to eax
     ;   5. Store new numInt value in numInt (not finalized, and is crucial 
-    ;       to aritmethic as long as loop is in effect).
+    ;       to arithmetic as long as loop is in effect).
     ;-----------------------------------------------------------------------
     sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value 
     mov     ebx, [ebp+60]               ; 1
