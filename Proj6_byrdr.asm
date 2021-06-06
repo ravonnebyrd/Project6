@@ -96,7 +96,7 @@ FORTY_EIGHT         =   48
     programTitle                BYTE        "Lower-Level I/O Procedures for Numerical Strings by Ravonne Byrd",0
     programDescription          BYTE        "If you input 10 integers that can each fit in range [-2147483648, 2147483647] (inclusive),",13,10,
                                             "this program will display that list of integers, as well as report back their sum and rounded average.",13,10,
-                                            "Please enter no more than 10 characters, or 11 if using a leading sign (+ or -). ",13,10,0
+                                            "Enter no more than 10 digits per integer. 11 characters is ok if using a leading sign (+ -). Also, no extra spaces.",13,10,0
     userPrompt                  BYTE        "Please enter your integer: ",0
     secondUserPrompt            BYTE        "Try again: ",0
     errorMessage                BYTE        "ERROR: Are you sure that was an integer? Or maybe it was too large for 32-bits.",13,10,0
@@ -111,7 +111,6 @@ FORTY_EIGHT         =   48
     byteCount                   DWORD       ?                       ; holds count of actual bytes used in userNum
 
     ; ReadVal procedure variables
-    numInt                      SDWORD      ZERO 
     negate                      DWORD       ZERO                    ; boolean
     tempHoldAL                  SDWORD      ZERO
     
@@ -145,27 +144,22 @@ main PROC
     ;--------------------------------------------------------------
     ; set up for _getInputLoop
     mov     ecx, LENGTHOF intArray
-    mov     esi, offset intArray
+    mov     edi, offset intArray
 
 _getInputLoop: 
     push    offset tempHoldAL
     push    offset errorMessage
     push    offset negate
     push    offset secondUserPrompt
-    push    offset numInt
+    push    edi
     push    offset userPrompt
     push    offset userNum
     push    maxCharUserNum
     push    offset byteCount
     call    ReadVal
-    
-    ; add current numInt into intArray, via ebx
-    mov     ebx, numInt                 
-    mov     SDWORD PTR [esi], ebx
 
-     ; clear numInt for next iteration
-    mov     numInt, ZERO               
-    add     esi, typeIntArray          
+    ; increment edi            
+    add     edi, typeIntArray          
 
     LOOP    _getInputLoop
 
@@ -311,7 +305,7 @@ Introduction EndP
 ;           [ebp+56]    =   reference input parameter, error message
 ;           [ebp+52]    =   reference output parameter, negate
 ;           [ebp+48]    =   reference input parameter, try again prompt
-;           [ebp+44]    =   reference output parameter, int to add to array of user inputted values
+;           [ebp+44]    =   reference output parameter, memory location for integer in array
 ;       Primarily for mGetString:
 ;           [ebp+40]    =   reference input parameter, prompt string array
 ;           [ebp+36]    =   reference output parameter, user entered string 
@@ -397,10 +391,10 @@ _firstPassContinue:
     add     eax, [ebx]                  ; 4
 
     ;-------------------------------------------------------------------------
-    ; Before copying the final value to numInt and
+    ; Before copying the final value to the array and
     ;   exiting the loop (when ecx = 0), it is important to check if 
     ;   the number is actually in SDWORD range.
-    ;   This why we stop once ecx is still 1, and we have final numInt in eax.
+    ;   This why we stop once ecx is still 1, and we have final value in eax.
     ;--------------------------------------------------------------------------
     cmp     ecx, ONE
     je      _rangeCheck
@@ -415,7 +409,7 @@ _continueConversionFromNegPosSign:
     ;-----------------------------------------------------------------------
     ; After exiting the validation loop:
     ;   Circles back to negate boolean set inside _negate label.
-    ;   If set (negate = 1), then must perform negation of numInt.
+    ;   If set (negate = 1), then must perform negation of value.
     ;   Else, procedure is finished.
     ;-----------------------------------------------------------------------
     mov     ebx, [ebp+52]
@@ -425,16 +419,11 @@ _continueConversionFromNegPosSign:
 
 ;----------------------------------------------------------------------
 ; Error message
-;   Displays error message, and clears the slate of both numInt and 
+;   Displays error message, and clears the slate of  
 ;       negate, in order to get new attempt at valid user input.
 ;----------------------------------------------------------------------
 _error:
     mdisplayString      [ebp+56]
-
-    ; clear numInt
-    mov     edx, [ebp+44]                       
-    mov     ebx, ZERO
-    mov     DWORD PTR [edx], ebx
     
     ; clear negate
     mov     edx, [ebp+52]                       
@@ -453,8 +442,8 @@ _negate:
     jmp     _continueConversionFromNegPosSign
 
 ;----------------------------------------------------------------------
-; After loop has run and numInt is valid but needs negation,
-;   this section actually performs the negation required for numInt.
+; After loop has run and value is valid but needs negation,
+;   this section actually performs the negation required for value.
 ;----------------------------------------------------------------------
 _performNegate:
     mov     ebx, [ebp+44]
