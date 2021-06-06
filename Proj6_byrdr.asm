@@ -372,12 +372,12 @@ _firstPassContinue:
     ;   Converts a string into it's SDWORD integer representation.
     ;   1. First, store offset of tempHoldAl in ebx, then store current
     ;       value of AL in tempHoldAL, since we need eax for multiplication.
-    ;   2. Next, store offset of numInt in edx, and move current value 
-    ;       of numInt into eax. 
+    ;   2. Next, store offset of value in edx, and move current value 
+    ;       into eax. 
     ;   3. Multiply eax by 10.
     ;       Check for any overflow, which is an instant jump to error.
     ;   4. Add value of tempHoldAl to eax
-    ;   5. Store new numInt value in numInt (not finalized, and is crucial 
+    ;   5. Store new  value in memory (not finalized, and is crucial 
     ;       to arithmetic as long as loop is in effect).
     ;-----------------------------------------------------------------------
     sub     AL, FORTY_EIGHT             ; (AL - 48) - to get non-ASCII value 
@@ -456,7 +456,7 @@ _performNegate:
 ; Range Check
 ;   Checking that final eax value generated from algorithm is within SDWORD 
 ;   range. Perform this check while still in algorithm loop (ecx = 1), but
-;   at end of computation algorithm, before storing in numInt. 
+;   at end of computation algorithm, before storing in memory. 
 ;   Before checking range, must first check negate variable boolean 
 ;   to see which check to perform (either for a positive or negative number)
 ;       If true, jump to _checkRangeNegative.
