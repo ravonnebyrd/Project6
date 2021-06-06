@@ -1,7 +1,7 @@
 TITLE String Primitives & MACROs     (Proj6_byrdr.asm)
 
 ; Author: Ravonne Byrd
-; Last Modified: June 4, 2021
+; Last Modified: June 5, 2021
 ; OSU email address: byrdr@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number:  6               Due Date: June 6, 2021
